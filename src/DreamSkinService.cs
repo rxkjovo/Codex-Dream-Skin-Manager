@@ -131,7 +131,7 @@ namespace CodexDreamSkinManager
         {
             EnsureManagerAvailable();
             ScriptResult result = await PowerShellRunner.RunAsync(managerScript,
-                new[] { P("-Action"), V("Status"), P("-Quick"), P("-SkipThemes"),
+                new[] { P("-Action"), V("Status"), P("-SkipThemes"),
                     P("-SkillRoot"), V(Path.Combine(rootDirectory, "windows")) }, ReadTimeoutMilliseconds);
             return ParseStatus(result.Output);
         }

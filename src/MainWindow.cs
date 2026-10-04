@@ -360,7 +360,12 @@ namespace CodexDreamSkinManager
             {
                 VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                HorizontalContentAlignment = HorizontalAlignment.Stretch
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                // WPF's default focus adorner draws a large dotted rectangle
+                // around the entire dashboard when the scroll viewer is
+                // focused. The dashboard has its own control-level focus
+                // feedback, so the container adorner is only visual noise.
+                FocusVisualStyle = null
             };
             dashboardScroll.SizeChanged += delegate { UpdateThemeGridHeight(); };
             AutomationProperties.SetName(dashboardScroll, "DashboardScroll");
@@ -447,7 +452,7 @@ namespace CodexDreamSkinManager
             Grid themeHost = new Grid();
             AutomationProperties.SetName(themeHost, "ThemeGridScroll");
             themeList = new ListBox { Height = 360, Background = SurfaceBrush, BorderBrush = AppBorderBrush,
-                BorderThickness = new Thickness(1), Padding = new Thickness(6) };
+                BorderThickness = new Thickness(1), Padding = new Thickness(6), FocusVisualStyle = null };
             ScrollViewer.SetHorizontalScrollBarVisibility(themeList, ScrollBarVisibility.Disabled);
             ScrollViewer.SetVerticalScrollBarVisibility(themeList, ScrollBarVisibility.Auto);
             themeList.Resources[typeof(ScrollBar)] = ManagerControlStyles.Get("VerticalScroll");
@@ -1255,8 +1260,13 @@ namespace CodexDreamSkinManager
                 else
                 {
                     bool video = string.Equals(Path.GetExtension(theme.ImagePath), ".mp4", StringComparison.OrdinalIgnoreCase);
-                    bool needsStart = !currentStatus.IsRunning ||
-                        string.Equals(currentStatus.StatusKind, "degraded", StringComparison.OrdinalIgnoreCase);
+                    // A degraded renderer can still have a healthy, reusable
+                    // CDP/injector session (for example after an image theme
+                    // change), so normal image themes try live apply first.
+                    // Video themes still need the connection preflight because
+                    // the video decoder is validated during startup.
+                    bool degraded = string.Equals(currentStatus.StatusKind, "degraded", StringComparison.OrdinalIgnoreCase);
+                    bool needsStart = !currentStatus.IsRunning || (video && degraded);
                     // A video connection is temporary: after validation startup
                     // closes it to install the selected theme's native appearance.
                     bool restartAuthorized = false;

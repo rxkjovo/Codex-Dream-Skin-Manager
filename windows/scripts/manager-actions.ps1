@@ -917,6 +917,24 @@ function Get-ManagerInjectorStatus {
   $processPath = Get-DreamSkinProcessExecutablePath -ProcessInfo $process
   $commandLine = "$($process.CommandLine)"
   if (-not $processPath -or -not $commandLine) {
+    # Some Windows installations hide a packaged Node process' path and
+    # command line even from the same-user manager.  Keep the live session
+    # usable when the PID is still a node process and its recorded start time
+    # matches exactly; a reused PID cannot pass this continuity check.
+    $continuity = $false
+    if ($State.injectorStartedAt -and "$($process.Name)" -ieq 'node.exe') {
+      try {
+        $startedAt = Get-DreamSkinProcessStartedAt -ProcessId $processId
+        $continuity = Test-DreamSkinTimestampEqual -Left $startedAt -Right "$($State.injectorStartedAt)"
+      } catch { $continuity = $false }
+    }
+    if ($continuity) {
+      return [pscustomobject]@{
+        Kind = 'running'
+        Message = "皮肤注入器正在运行（PID $processId；Windows 未提供进程路径，已依据启动时间确认）。"
+        Running = $true
+      }
+    }
     return [pscustomobject]@{ Kind = 'uninspectable'; Message = "无法核验注入器进程身份（PID $processId）。"; Running = $false }
   }
 
@@ -957,7 +975,12 @@ function Get-ManagerInjectorStatus {
 function Invoke-ManagerLiveApplyIfRunning {
   $state = Read-DreamSkinState -Path $paths.State
   $identity = Get-ManagerInjectorStatus -State $state
-  if (-not $identity.Running) { return $false }
+  # The packaged Node process can be running while Windows hides its command
+  # line and executable path. The recorded port/browser pair is independently
+  # verified by the renderer probe, so keep using that live session instead
+  # of forcing a Codex restart merely because PID identity is uninspectable.
+  $hasLiveSession = $null -ne $state -and $state.port -and $state.browserId
+  if (-not $identity.Running -and -not $hasLiveSession) { return $false }
   $live = Invoke-DreamSkinLiveApply -StateRoot $StateRoot
   # Only this failure means the theme was committed but the live session did
   # not apply it. Callers may reconcile startup; validation/write errors must
@@ -1234,6 +1257,7 @@ switch ($Action) {
     $paused = Test-DreamSkinPaused -StateRoot $StateRoot
     $rendererStatus = if ($Quick) { 'unchecked' } else { 'unavailable' }
     $rendererMessage = if ($Quick) { '仅读取进程状态；应用皮肤时会确认实际显示。' } else { '' }
+    $rendererAppliedVerified = $false
     $statusKind = if ($identity.Running -and $paused) { 'paused' } else { $identity.Kind }
     $statusMessage = $identity.Message
     # A dead/outdated watcher does not remove the CSS already in Codex. Probe
@@ -1252,8 +1276,17 @@ switch ($Action) {
       }
       $rendererStatus = "$($renderer.Status)"
       $rendererMessage = "$($renderer.Message)"
+      $rendererAppliedVerified = [bool]($renderer.Verified -and $renderer.Status -eq 'applied')
       if ($identity.Running -and -not $renderer.Verified) {
         $statusKind = 'degraded'
+        $statusMessage = $rendererMessage
+      }
+      # The renderer probe is the authoritative answer for what the user can
+      # actually see.  Windows may hide the packaged Node command line even
+      # while the recorded browser session is healthy; do not show a red
+      # recovery state when the active theme is verified in Codex.
+      if ($rendererAppliedVerified) {
+        $statusKind = 'running'
         $statusMessage = $rendererMessage
       }
     }
@@ -1277,7 +1310,7 @@ switch ($Action) {
     $stateSchema = 0
     if ($state -and $state.schemaVersion) { [void][int]::TryParse("$($state.schemaVersion)", [ref]$stateSchema) }
     [ordered]@{
-      isRunning = [bool]$identity.Running
+      isRunning = [bool]($identity.Running -or $rendererAppliedVerified)
       isPaused = [bool]$paused
       statusKind = $statusKind
       statusMessage = $statusMessage
