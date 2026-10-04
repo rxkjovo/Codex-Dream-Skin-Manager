@@ -1111,6 +1111,20 @@ html[data-dream-skin="active"] [data-codex-composer-root][data-composer-placemen
   backdrop-filter: none !important;
 }
 
+/* Codex 26.930+ wraps the Home project picker in a composer rail. The rail
+   item carries the native action-bar fill, while the ComposerLayoutRoot below
+   remains the frosted input surface. Clear only this above-composer item so
+   the selected artwork continues through the project row. */
+html[data-dream-skin="active"]
+  [data-composer-rail][data-composer-rail-placement="above"]
+  [data-composer-rail-item][data-composer-placement="home"][data-composer-rail-placement="above"] {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
 /* Newer app shells may no longer expose the selector contract above. The
    renderer assigns these parts only from one coherent main/composer/sidebar
    structure; keep the minimum background and transparency contract functional
