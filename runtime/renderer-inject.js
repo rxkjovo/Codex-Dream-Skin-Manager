@@ -998,6 +998,27 @@
     const sceneWrappers = new Set([...candidates]
       .filter((node) => sceneNodes.some((scene) => node.contains?.(scene))));
 
+    // The composer footer owns a full-width decorative fade behind the real
+    // input. It is a neutral surface candidate, but it is part of the canvas,
+    // not an adjustable panel. Keep the exact utility signature narrow so
+    // dialogs, menus and other aria-hidden transitions remain independent.
+    const isComposerDecoration = (node) => {
+      if (!node || node.getAttribute?.("role") ||
+        node.closest?.('[role="dialog"], [role="menu"], [role="tooltip"]')) return false;
+      if (!node.matches?.(
+        '[class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"]' +
+        '[class~="-top-8"]',
+      )) return false;
+      const fadeSurface = node.matches?.('[class~="z-0"][class~="bg-surface"]') ||
+        node.matches?.('[aria-hidden="true"][class~="bg-surface"]') ||
+        node.matches?.('[aria-hidden="true"][class~="backdrop-blur-lg"]');
+      return fadeSurface && Boolean(
+        node.closest?.('[data-thread-scroll-footer]') &&
+        node.closest?.('[data-ds-part="thread"]'),
+      );
+    };
+    const decorativeNodes = new Set([...candidates].filter(isComposerDecoration));
+
     for (const node of surfaceNodes.keys()) {
       if (!candidates.has(node)) restoreSurface(node);
     }
@@ -1008,17 +1029,20 @@
         node.parentElement?.hasAttribute?.('data-radix-popper-content-wrapper') ||
         node.classList?.contains('sticky') || node.classList?.contains('fixed');
       let nested = false;
-      if (!floating) {
+      if (!floating && !decorativeNodes.has(node) && parts.get(node) !== "composer") {
         for (let parent = node.parentElement; parent; parent = parent.parentElement) {
-          if (candidates.has(parent) && !sceneWrappers.has(parent)) { nested = true; break; }
+          if (candidates.has(parent) && !sceneWrappers.has(parent) &&
+            !decorativeNodes.has(parent)) { nested = true; break; }
         }
       }
       if (!surfaceNodes.has(node)) surfaceNodes.set(node, node.getAttribute(SURFACE_ATTR));
       // The sidebar is structural chrome, not an adjustable floating panel.
       // Keep it in the candidate tree so neutral navigation descendants clear
       // their native paint; actual menus/dialogs inside it remain independent.
-      const value = parts.get(node) === "sidebar" ? "shell"
-        : nested || sceneWrappers.has(node) ? "clear" : "panel";
+      const value = parts.get(node) === "composer" ? "panel"
+        : decorativeNodes.has(node) ? "clear"
+          : parts.get(node) === "sidebar" ? "shell"
+            : nested || sceneWrappers.has(node) ? "clear" : "panel";
       if (node.getAttribute(SURFACE_ATTR) !== value) node.setAttribute(SURFACE_ATTR, value);
     }
   };

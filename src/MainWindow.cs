@@ -32,6 +32,42 @@ namespace CodexDreamSkinManager
         }
     }
 
+    internal sealed class ResponsiveThemePanel : Panel
+    {
+        private const double MinimumCellWidth = 160;
+
+        private static Size CellSize(double width)
+        {
+            int columns = Math.Max(1, (int)Math.Floor(width / MinimumCellWidth));
+            double cellWidth = width / columns;
+            // Card margins and border surround a 16:9 image and a label row.
+            return new Size(cellWidth, (Math.Max(0, cellWidth - 10) * 9 / 16) + 44);
+        }
+
+        protected override Size MeasureOverride(Size constraint)
+        {
+            double width = constraint.Width;
+            if (double.IsNaN(width) || double.IsInfinity(width) || width <= 0)
+                width = Math.Max(MinimumCellWidth, ActualWidth);
+            Size cell = CellSize(width);
+            int columns = Math.Max(1, (int)Math.Floor(width / MinimumCellWidth));
+            foreach (UIElement child in InternalChildren) child.Measure(cell);
+            int rows = (InternalChildren.Count + columns - 1) / columns;
+            return new Size(width, rows * cell.Height);
+        }
+
+        protected override Size ArrangeOverride(Size size)
+        {
+            Size cell = CellSize(size.Width);
+            int columns = Math.Max(1, (int)Math.Floor(size.Width / MinimumCellWidth));
+            for (int i = 0; i < InternalChildren.Count; i++)
+                InternalChildren[i].Arrange(new Rect(
+                    (i % columns) * cell.Width, (i / columns) * cell.Height,
+                    cell.Width, cell.Height));
+            return size;
+        }
+    }
+
     internal sealed class MainWindow : Window
     {
         private static readonly Brush BackgroundBrush = BrushFrom("#F4F6F8");
@@ -416,6 +452,13 @@ namespace CodexDreamSkinManager
             ScrollViewer.SetVerticalScrollBarVisibility(themeList, ScrollBarVisibility.Auto);
             themeList.Resources[typeof(ScrollBar)] = ManagerControlStyles.Get("VerticalScroll");
             themeList.ItemsPanel = HorizontalItemsPanel();
+            Style themeItemStyle = new Style(typeof(ListBoxItem));
+            themeItemStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(0)));
+            themeItemStyle.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0)));
+            themeItemStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
+            themeItemStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
+            themeItemStyle.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Stretch));
+            themeList.ItemContainerStyle = themeItemStyle;
             themeList.ItemTemplate = ThemeTemplate();
             themeList.SelectionChanged += ThemeSelectionChanged;
             AutomationProperties.SetName(themeList, "ThemeList");
@@ -2294,8 +2337,7 @@ namespace CodexDreamSkinManager
 
         private static ItemsPanelTemplate HorizontalItemsPanel()
         {
-            FrameworkElementFactory factory = new FrameworkElementFactory(typeof(WrapPanel));
-            factory.SetValue(WrapPanel.OrientationProperty, Orientation.Horizontal);
+            FrameworkElementFactory factory = new FrameworkElementFactory(typeof(ResponsiveThemePanel));
             return new ItemsPanelTemplate(factory);
         }
 
@@ -2364,8 +2406,6 @@ namespace CodexDreamSkinManager
         private static DataTemplate ThemeTemplate()
         {
             FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
-            border.SetValue(Border.WidthProperty, 124.0);
-            border.SetValue(Border.HeightProperty, 112.0);
             border.SetValue(Border.MarginProperty, new Thickness(4));
             border.SetValue(Border.CornerRadiusProperty, new CornerRadius(6));
             border.SetValue(Border.BorderBrushProperty, AppBorderBrush);
@@ -2373,21 +2413,29 @@ namespace CodexDreamSkinManager
             border.SetValue(Border.BackgroundProperty, SurfaceBrush);
             border.SetBinding(FrameworkElement.ToolTipProperty, new Binding("CategoryLabel"));
 
-            FrameworkElementFactory stack = new FrameworkElementFactory(typeof(StackPanel));
+            FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
+            FrameworkElementFactory imageRow = new FrameworkElementFactory(typeof(RowDefinition));
+            imageRow.SetValue(RowDefinition.HeightProperty, new GridLength(1, GridUnitType.Star));
+            grid.AppendChild(imageRow);
+            FrameworkElementFactory labelRow = new FrameworkElementFactory(typeof(RowDefinition));
+            labelRow.SetValue(RowDefinition.HeightProperty, new GridLength(34));
+            grid.AppendChild(labelRow);
             FrameworkElementFactory image = new FrameworkElementFactory(typeof(Image));
-            image.SetValue(Image.HeightProperty, 78.0);
             image.SetValue(Image.StretchProperty, Stretch.UniformToFill);
             image.SetBinding(Image.SourceProperty, new Binding("ThumbnailImage"));
-            stack.AppendChild(image);
+            grid.AppendChild(image);
 
             FrameworkElementFactory metadata = new FrameworkElementFactory(typeof(DockPanel));
-            metadata.SetValue(FrameworkElement.MarginProperty, new Thickness(7, 5, 7, 0));
+            metadata.SetValue(Grid.RowProperty, 1);
+            metadata.SetValue(FrameworkElement.MarginProperty, new Thickness(7, 0, 7, 0));
+            metadata.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
 
             FrameworkElementFactory dot = new FrameworkElementFactory(typeof(Border));
             dot.SetValue(FrameworkElement.WidthProperty, 7.0);
             dot.SetValue(FrameworkElement.HeightProperty, 7.0);
             dot.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
-            dot.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 4, 6, 0));
+            dot.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 6, 0));
+            dot.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
             dot.SetValue(DockPanel.DockProperty, Dock.Left);
             dot.SetBinding(Border.BackgroundProperty, new Binding("CategoryColor"));
             metadata.AppendChild(dot);
@@ -2405,8 +2453,8 @@ namespace CodexDreamSkinManager
             text.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
             text.SetBinding(TextBlock.TextProperty, new Binding("Name"));
             metadata.AppendChild(text);
-            stack.AppendChild(metadata);
-            border.AppendChild(stack);
+            grid.AppendChild(metadata);
+            border.AppendChild(grid);
 
             DataTemplate template = new DataTemplate(typeof(ThemeOption));
             template.VisualTree = border;
