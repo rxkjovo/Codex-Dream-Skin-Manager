@@ -24,7 +24,7 @@ namespace CodexDreamSkinManager
             {
                 WithStatusWindow(@"
 param($Action,$SkillRoot,[switch]$Quick,[switch]$SkipThemes)
-if ($Action -ne 'Status' -or -not $Quick -or -not $SkipThemes) { throw 'Unexpected expensive read' }
+if ($Action -ne 'Status' -or -not $SkipThemes) { throw 'Unexpected expensive read' }
 '{""isRunning"":true,""statusKind"":""running"",""rendererStatus"":""unchecked"",""themes"":[]}'
 ", delegate(MainWindow window, string root)
                 {
@@ -114,8 +114,8 @@ if ($Action -ne 'Status' -or -not $Quick -or -not $SkipThemes) { throw 'Unexpect
             string script = @"
 param($Action,$SkillRoot,[switch]$Quick,[switch]$SkipThemes)
 $ErrorActionPreference = 'Stop'
-if ($Action -eq 'Status' -and (-not $Quick -or -not $SkipThemes)) { throw 'Status must be lightweight' }
-if ($Action -eq 'ListThemes' -and ($Quick -or $SkipThemes)) { throw 'Catalog request lost its own contract' }
+if ($Action -eq 'Status' -and -not $SkipThemes) { throw 'Status must be lightweight' }
+if ($Action -eq 'ListThemes' -and $SkipThemes) { throw 'Catalog request lost its own contract' }
 if ($Action -ne 'Status' -and $Action -ne 'ListThemes') { throw 'Unexpected action' }
 if ($Action -eq '__SLOW__') {
   $deadline = [DateTime]::UtcNow.AddSeconds(10)

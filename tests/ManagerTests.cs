@@ -2147,7 +2147,7 @@ if (Test-Path (Join-Path $PSScriptRoot 'fail-live-apply')) {
         {
             double available = list.ActualWidth - list.Padding.Left - list.Padding.Right -
                 list.BorderThickness.Left - list.BorderThickness.Right;
-            int columns = (int)Math.Floor(Math.Max(0, available) / 132.0);
+            int columns = (int)Math.Floor(Math.Max(0, available) / 160.0);
             return Math.Max(1, Math.Min(maximum, columns));
         }
 

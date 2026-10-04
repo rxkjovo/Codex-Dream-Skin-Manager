@@ -914,6 +914,18 @@ function Get-ManagerInjectorStatus {
   } elseif ($State.skillRoot) {
     Join-Path "$($State.skillRoot)" 'scripts\injector.mjs'
   } else { $null }
+  $runtimeCurrent = $true
+  if ($State.runtimeFingerprint) {
+    $runtimeCurrent = Test-DreamSkinRuntimeCurrent -SkillRoot $SkillRoot -RecordedInjectorPath $expectedInjector `
+      -RecordedFingerprint "$($State.runtimeFingerprint)"
+  }
+  if (-not $runtimeCurrent) {
+    return [pscustomobject]@{
+      Kind = 'stale'
+      Message = '皮肤运行时已更新，需要重新应用后才能使用新功能。'
+      Running = $false
+    }
+  }
   $processPath = Get-DreamSkinProcessExecutablePath -ProcessInfo $process
   $commandLine = "$($process.CommandLine)"
   if (-not $processPath -or -not $commandLine) {
@@ -961,13 +973,8 @@ function Get-ManagerInjectorStatus {
   if (-not $matches) {
     return [pscustomobject]@{ Kind = 'mismatch'; Message = "PID $processId 存在，但不是记录的 Dream Skin 注入器。"; Running = $false }
   }
-  if (-not (Test-DreamSkinRuntimeCurrent -SkillRoot $SkillRoot -RecordedInjectorPath $expectedInjector `
-      -RecordedFingerprint "$($State.runtimeFingerprint)")) {
-    return [pscustomobject]@{
-      Kind = 'stale'
-      Message = '皮肤运行时已更新，需要重新应用后才能使用新功能。'
-      Running = $false
-    }
+  if (-not $State.runtimeFingerprint) {
+    return [pscustomobject]@{ Kind = 'uninspectable'; Message = '状态文件缺少运行时指纹，无法确认注入器版本。'; Running = $false }
   }
   return [pscustomobject]@{ Kind = 'running'; Message = "皮肤注入器正在运行（PID $processId）。"; Running = $true }
 }
@@ -1285,7 +1292,7 @@ switch ($Action) {
       # actually see.  Windows may hide the packaged Node command line even
       # while the recorded browser session is healthy; do not show a red
       # recovery state when the active theme is verified in Codex.
-      if ($rendererAppliedVerified) {
+      if ($rendererAppliedVerified -and $identity.Kind -notin @('stale','mismatch')) {
         $statusKind = 'running'
         $statusMessage = $rendererMessage
       }
@@ -1310,7 +1317,8 @@ switch ($Action) {
     $stateSchema = 0
     if ($state -and $state.schemaVersion) { [void][int]::TryParse("$($state.schemaVersion)", [ref]$stateSchema) }
     [ordered]@{
-      isRunning = [bool]($identity.Running -or $rendererAppliedVerified)
+      isRunning = [bool]($identity.Running -or
+        ($rendererAppliedVerified -and $identity.Kind -notin @('stale','mismatch')))
       isPaused = [bool]$paused
       statusKind = $statusKind
       statusMessage = $statusMessage
