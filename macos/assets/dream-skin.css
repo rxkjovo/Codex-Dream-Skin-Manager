@@ -1324,9 +1324,9 @@ html[data-dream-skin="active"][data-dream-shell="light"]
   opacity: 1 !important;
 }
 
-/* Current Codex builds render the home project picker as a separate opaque
-   cap above the composer. Join both native controls into one continuous
-   surface while leaving task and utility-route inputs untouched. */
+/* Current Codex builds render the home project picker above the composer.
+   Keep this surrounding chrome transparent; the composer below remains the
+   single frosted input surface. */
 html[data-dream-skin="active"] :is([class*="_homeUtilityBar_"], [class*="_ComposerHomeUtilityBar_"]) {
   position: relative;
   z-index: 3;
@@ -1334,13 +1334,10 @@ html[data-dream-skin="active"] :is([class*="_homeUtilityBar_"], [class*="_Compos
   width: 100% !important;
   margin-inline: 0 !important;
   padding-inline: 18px !important;
-  border-radius: 22px 22px 0 0 !important;
-  background: var(--ds-surface-background) !important;
-  box-shadow:
-    inset 1px 0 rgb(var(--ds-muted-rgb) / .18),
-    inset -1px 0 rgb(var(--ds-muted-rgb) / .18),
-    inset 0 1px rgb(var(--ds-muted-rgb) / .18) !important;
-  backdrop-filter: var(--ds-surface-filter) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 
 html[data-dream-skin="active"] [role="main"]:has([data-testid="home-icon"]):has(:is([class*="_homeUtilityBar_"], [class*="_ComposerHomeUtilityBar_"]))
@@ -1355,11 +1352,8 @@ html[data-dream-skin="active"] [role="main"]:has([data-testid="home-icon"]):has(
 }
 
 html[data-dream-skin="active"][data-dream-art-wide="true"] :is([class*="_homeUtilityBar_"], [class*="_ComposerHomeUtilityBar_"]) {
-  background: var(--ds-immersive-composer-solid) !important;
-  box-shadow:
-    inset 1px 0 var(--ds-immersive-line),
-    inset -1px 0 var(--ds-immersive-line),
-    inset 0 1px rgb(var(--ds-text-rgb) / .12) !important;
+  background: transparent !important;
+  box-shadow: none !important;
   backdrop-filter: none !important;
 }
 
@@ -1374,11 +1368,8 @@ html[data-dream-skin="active"][data-dream-art-wide="true"]
 
 html[data-dream-skin="active"][data-dream-shell="light"][data-dream-art-wide="true"]
   :is([class*="_homeUtilityBar_"], [class*="_ComposerHomeUtilityBar_"]) {
-  box-shadow:
-    inset 1px 0 var(--ds-immersive-line),
-    inset -1px 0 var(--ds-immersive-line),
-    inset 0 1px rgb(var(--ds-panel-rgb) / .72) !important;
-  backdrop-filter: blur(8px) saturate(102%) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 
 html[data-dream-skin="active"] :is([class*="_homeUtilityBar_"], [class*="_ComposerHomeUtilityBar_"]) button,
@@ -1592,9 +1583,10 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface
 html[data-dream-skin="active"] [role="main"]:has([data-testid="home-icon"]) div:has(> .horizontal-scroll-fade-mask .group\/project-selector) {
   position: relative;
   padding-top: 28px !important;
-  border: 1px solid rgb(var(--ds-muted-rgb) / .16);
-  border-bottom: 0;
-  background: rgb(var(--ds-panel-rgb) / .92) !important;
+  border: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 
 html[data-dream-skin="active"] [role="main"]:has([data-testid="home-icon"]) div:has(> .horizontal-scroll-fade-mask .group\/project-selector)::before {
