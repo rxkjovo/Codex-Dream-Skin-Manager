@@ -1100,16 +1100,15 @@ html[data-dream-skin="active"] [data-codex-composer-root][data-composer-placemen
   backdrop-filter: none !important;
 }
 
-/* The current Home utility bar is a separate opaque cap above the Composer.
-   Match its surface to the public composer without affecting task routes. */
+/* The current Home utility bar sits above the Composer. Keep the surrounding
+   chrome transparent so only the actual input surface carries the glass tint. */
 html[data-dream-skin="active"] [data-codex-composer-root][data-composer-placement="home"]
   [data-composer-home-utility-bar-position="above"] {
-  background: var(--ds-surface-background) !important;
-  border: 1px solid rgb(var(--ds-muted-rgb) / .18) !important;
-  border-bottom: 0 !important;
-  border-radius: 22px 22px 0 0 !important;
-  box-shadow: 0 10px 28px rgb(var(--ds-bg-rgb) / .24) !important;
-  backdrop-filter: var(--ds-surface-filter) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 
 /* Newer app shells may no longer expose the selector contract above. The
