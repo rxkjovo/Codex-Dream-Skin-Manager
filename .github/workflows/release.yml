@@ -4,6 +4,13 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to build (for example v2.0.2)"
+        required: true
+        default: "v2.0.2"
+        type: string
 
 permissions:
   contents: write
@@ -31,7 +38,7 @@ jobs:
         id: version
         shell: powershell
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           $tag = $env:RELEASE_TAG
           if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') {
