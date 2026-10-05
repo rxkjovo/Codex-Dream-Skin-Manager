@@ -44,6 +44,13 @@ namespace CodexDreamSkinManager
     {
         private const string EncodedErrorPrefix = "__CODEX_DREAM_SKIN_ERROR_UTF8__";
 
+        private sealed class ScriptOutput
+        {
+            public string Text = "";
+            public bool Completed;
+            public int ExitCode;
+        }
+
         public static string QuoteLiteral(string value)
         {
             return "'" + (value ?? "").Replace("'", "''") + "'";
@@ -77,36 +84,68 @@ namespace CodexDreamSkinManager
 
                 using (Process process = Process.Start(info))
                 {
-                    Stopwatch stopwatch = Stopwatch.StartNew();
-                    Task<string> outputTask = ReadScriptOutputAsync(process.StandardOutput, completionMarker);
-                    Task<string> errorTask = ReadScriptOutputAsync(process.StandardError, completionMarker);
-                    if (!process.WaitForExit(timeoutMilliseconds))
+                    try
                     {
+                        Stopwatch stopwatch = Stopwatch.StartNew();
+                        Task<ScriptOutput> outputTask = ReadScriptOutputAsync(process.StandardOutput, completionMarker);
+                        Task<ScriptOutput> errorTask = ReadScriptOutputAsync(process.StandardError, completionMarker);
+                        // Windows PowerShell can stay alive to drain a redirected
+                        // watcher after the script's finally block has completed.
+                        // Wait for the wrapper's result, not that daemon's lifetime.
+                        if (!Task.WaitAll(new Task[] { outputTask, errorTask }, timeoutMilliseconds))
+                        {
+                            throw new TimeoutException(string.Format(CultureInfo.InvariantCulture,
+                                "操作执行超时（{0}，等待 {1} 秒）。操作结果尚未确认，请刷新状态。",
+                                operation, timeoutMilliseconds / 1000.0));
+                        }
+                        ScriptOutput output = outputTask.Result;
+                        ScriptOutput error = errorTask.Result;
+                        int exitCode;
+                        if (output.Completed && error.Completed && output.ExitCode == error.ExitCode)
+                        {
+                            exitCode = output.ExitCode;
+                            // A natural nonzero exit remains authoritative. A
+                            // wrapper still draining its watcher is cleaned up
+                            // below after the confirmed result has been captured.
+                            if (process.WaitForExit(250) && process.ExitCode != 0)
+                                exitCode = process.ExitCode;
+                        }
+                        else
+                        {
+                            int remainingMilliseconds = Math.Max(0,
+                                timeoutMilliseconds - (int)Math.Min(stopwatch.ElapsedMilliseconds, int.MaxValue));
+                            if (!process.WaitForExit(Math.Min(2000, remainingMilliseconds)))
+                                throw new InvalidOperationException("脚本未返回完整结果（" + operation + "）。请刷新状态确认操作结果。");
+                            exitCode = process.ExitCode;
+                            // A successful EOF alone is not a confirmed wrapper
+                            // result; a forced exit must never report success.
+                            if (exitCode == 0)
+                                throw new InvalidOperationException("脚本未返回完整结果（" + operation + "）。请刷新状态确认操作结果。");
+                        }
+                        ScriptResult result = new ScriptResult();
+                        result.ExitCode = exitCode;
+                        result.Output = output.Text.Trim();
+                        result.Error = NormalizePowerShellError(error.Text);
+                        if (result.ExitCode != 0)
+                        {
+                            string encodedError = ExtractEncodedError(result.Output);
+                            string message = !string.IsNullOrWhiteSpace(encodedError) ? encodedError
+                                : (string.IsNullOrWhiteSpace(result.Error) ? result.Output : result.Error);
+                            if (string.IsNullOrWhiteSpace(message))
+                                message = string.Format(CultureInfo.InvariantCulture,
+                                    "脚本执行失败（{0}，退出码 {1}）。", operation, exitCode);
+                            throw new InvalidOperationException(message);
+                        }
+                        return result;
+                    }
+                    finally
+                    {
+                        // Process.Dispose does not terminate a live shell. Clean
+                        // up this wrapper on every path, including reader faults,
+                        // without terminating its watcher or hiding the result.
                         try { if (!process.HasExited) process.Kill(); } catch { }
-                        process.WaitForExit(5000);
-                        throw new TimeoutException(string.Format(CultureInfo.InvariantCulture,
-                            "操作执行超时（{0}，等待 {1} 秒）。操作结果尚未确认，请刷新状态。",
-                            operation, timeoutMilliseconds / 1000.0));
+                        try { process.WaitForExit(2000); } catch { }
                     }
-                    int remainingMilliseconds = Math.Max(0,
-                        timeoutMilliseconds - (int)Math.Min(stopwatch.ElapsedMilliseconds, int.MaxValue));
-                    int exitCode = process.ExitCode;
-                    if (!Task.WaitAll(new Task[] { outputTask, errorTask }, Math.Min(2000, remainingMilliseconds)))
-                        throw new TimeoutException(string.Format(CultureInfo.InvariantCulture,
-                            "脚本已退出，但输出未完整回收（{0}，退出码 {1}）。请刷新状态确认操作结果。",
-                            operation, exitCode));
-                    ScriptResult result = new ScriptResult();
-                    result.ExitCode = exitCode;
-                    result.Output = outputTask.Result.Trim();
-                    result.Error = NormalizePowerShellError(errorTask.Result);
-                    if (result.ExitCode != 0)
-                    {
-                        string encodedError = ExtractEncodedError(result.Output);
-                        throw new InvalidOperationException(!string.IsNullOrWhiteSpace(encodedError)
-                            ? encodedError
-                            : (string.IsNullOrWhiteSpace(result.Error) ? result.Output : result.Error));
-                    }
-                    return result;
                 }
             });
         }
@@ -118,23 +157,33 @@ namespace CodexDreamSkinManager
 
         // A long-lived descendant can retain the pipe even after PowerShell exits.
         // The wrapper marks its own output complete without waiting for descendant EOF.
-        private static async Task<string> ReadScriptOutputAsync(StreamReader reader, string completionMarker)
+        private static async Task<ScriptOutput> ReadScriptOutputAsync(StreamReader reader, string completionMarker)
         {
             StringBuilder output = new StringBuilder();
+            ScriptOutput result = new ScriptOutput();
             string line;
             while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
             {
-                if (line == completionMarker) break;
+                int exitCode;
+                if (line.StartsWith(completionMarker + ":", StringComparison.Ordinal) &&
+                    int.TryParse(line.Substring(completionMarker.Length + 1), NumberStyles.Integer,
+                        CultureInfo.InvariantCulture, out exitCode))
+                {
+                    result.Completed = true;
+                    result.ExitCode = exitCode;
+                    break;
+                }
                 output.AppendLine(line);
             }
-            return output.ToString();
+            result.Text = output.ToString();
+            return result;
         }
 
         private static string BuildArguments(string scriptPath, IList<ScriptArgument> arguments, string completionMarker)
         {
             StringBuilder command = new StringBuilder();
             command.Append("$utf8 = New-Object System.Text.UTF8Encoding($false); ");
-            command.Append("[Console]::OutputEncoding = $utf8; $OutputEncoding = $utf8; try { & ");
+            command.Append("[Console]::OutputEncoding = $utf8; $OutputEncoding = $utf8; $dreamSkinWrapperExitCode = 0; $LASTEXITCODE = 0; try { & ");
             command.Append(QuoteLiteral(scriptPath));
             foreach (ScriptArgument argument in arguments)
             {
@@ -142,7 +191,10 @@ namespace CodexDreamSkinManager
                 command.Append(' ');
                 command.Append(argument.IsParameter ? argument.Text : QuoteLiteral(argument.Text));
             }
-            command.Append(" } catch { $message = [string]$_.Exception.Message; ");
+            command.Append("; $dreamSkinInvocationSucceeded = $?; if (-not $dreamSkinInvocationSucceeded) { ");
+            command.Append("if ($LASTEXITCODE -is [int] -and $LASTEXITCODE -ne 0) { $dreamSkinWrapperExitCode = $LASTEXITCODE } ");
+            command.Append("else { $dreamSkinWrapperExitCode = 1 } } ");
+            command.Append("} catch { $dreamSkinWrapperExitCode = 1; $message = [string]$_.Exception.Message; ");
             command.Append("if ([string]::IsNullOrWhiteSpace($message)) { $message = [string]$_ }; ");
             command.Append("[Console]::Out.WriteLine('");
             command.Append(EncodedErrorPrefix);
@@ -151,10 +203,11 @@ namespace CodexDreamSkinManager
             {
                 command.Append(" finally { [Console]::Out.WriteLine(); [Console]::Out.WriteLine(");
                 command.Append(QuoteLiteral(completionMarker));
-                command.Append("); [Console]::Error.WriteLine(); [Console]::Error.WriteLine(");
+                command.Append(" + ':' + $dreamSkinWrapperExitCode); [Console]::Error.WriteLine(); [Console]::Error.WriteLine(");
                 command.Append(QuoteLiteral(completionMarker));
-                command.Append("); }");
+                command.Append(" + ':' + $dreamSkinWrapperExitCode); }");
             }
+            command.Append("; if ($dreamSkinWrapperExitCode -ne 0) { exit $dreamSkinWrapperExitCode }");
             string encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(command.ToString()));
             return "-NoProfile -ExecutionPolicy Bypass -EncodedCommand " + encoded;
         }

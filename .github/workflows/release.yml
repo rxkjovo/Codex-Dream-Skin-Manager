@@ -4,14 +4,12 @@ on:
   push:
     tags:
       - "v*"
-    branches:
-      - "ui-responsive-cards-2.0.2"
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Release tag to build (for example v2.0.2)"
+        description: "Release tag matching the selected commit (for example v2.0.3)"
         required: true
-        default: "v2.0.2"
+        default: "v2.0.3"
         type: string
 
 permissions:
@@ -40,13 +38,20 @@ jobs:
         id: version
         shell: powershell
         env:
-          RELEASE_TAG: ${{ inputs.release_tag || (github.ref_name == 'ui-responsive-cards-2.0.2' && 'v2.0.2') || github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           $tag = $env:RELEASE_TAG
           if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') {
             throw "Release tag must use vMAJOR.MINOR.PATCH: $tag"
           }
           $version = $Matches[1]
+          $tagCommit = git rev-parse --verify "refs/tags/$tag^{commit}"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Release tag does not exist: $tag"
+          }
+          if ($tagCommit.Trim() -ne $env:GITHUB_SHA) {
+            throw "Release tag ($tagCommit) must match the selected event commit ($env:GITHUB_SHA)."
+          }
           $assemblyInfo = Get-Content -LiteralPath 'src\AssemblyInfo.cs' -Raw
           if ($assemblyInfo -notmatch 'AssemblyInformationalVersion\("([^\"]+)"\)') {
             throw 'AssemblyInformationalVersion is missing.'

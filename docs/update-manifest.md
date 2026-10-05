@@ -9,7 +9,7 @@ macOS 普通 DMG 未配置独立 GUI 签名通道时，原生管理器的手动�
 固定入口：
 
 ```text
-https://github.com/xxloocee/Codex-Dream-Skin-Manager/releases/latest/download/update.json
+https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases/latest/download/update.json
 ```
 
 ## 数据格式

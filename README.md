@@ -4,14 +4,14 @@
 
 ## 下载与安装
 
-当前版本：`2.0.2`。前往 [GitHub Releases](https://github.com/xxloocee/Codex-Dream-Skin-Manager/releases) 下载对应安装包：
+当前版本：`2.0.3`。前往 [GitHub Releases](https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases) 下载对应安装包：
 
 | 平台 | 系统要求 | 安装包 |
 | --- | --- | --- |
-| Windows 安装版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.2-windows-x64-setup.exe` |
-| Windows 便携版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.2-windows-x64-portable.zip` |
-| macOS Intel | macOS 13+ | `CodexDreamSkinManager-v2.0.2-macos-x64.dmg` |
-| macOS Apple Silicon | macOS 13+ | `CodexDreamSkinManager-v2.0.2-macos-arm64.dmg` |
+| Windows 安装版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.3-windows-x64-setup.exe` |
+| Windows 便携版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.3-windows-x64-portable.zip` |
+| macOS Intel | macOS 13+ | `CodexDreamSkinManager-v2.0.3-macos-x64.dmg` |
+| macOS Apple Silicon | macOS 13+ | `CodexDreamSkinManager-v2.0.3-macos-arm64.dmg` |
 
 请先安装 Codex 桌面客户端。发布包已内置 Node.js，无需单独配置运行环境；Windows 便携版须完整解压，不能只复制 EXE。`SHA256SUMS.txt` 提供下载包校验值。
 
@@ -24,6 +24,7 @@
 - **外观调节**：调整背景位置、缩放、移动范围、浅深色外观和强调色；全窗口皮肤使用连续背景与统一半透明底色。面板不透明度仅控制输入框、右侧浮层、设置等独立面板，不影响侧栏、顶部菜单栏和聊天区整体底色；消息气泡不透明度另行设置。
 - **主题编辑与素材保存**：编辑内置或已保存主题的参数，将原始图片或视频保存到本地。
 - **启用与恢复**：应用主题、暂停/继续、重置默认主题或恢复原始外观；显示连接异常并按需恢复。
+- **启动动画（Windows）**：管理器启动或重启 Codex 并确认皮肤后，在同一窗口播放启动动画；日常切换主题不会重播。可按 Esc 跳过，Ctrl+Alt+B 调整动画图片与文字，播放结束保留当前皮肤。
 - **检查更新**：通过发布附件 `update.json` 检查新版本，无需 GitHub API；确认后下载、校验并启动安装程序。
 
 **macOS 原生 GUI**：提供主题库预览、搜索与筛选、批量导入、`.cdskin` 导入导出、主题参数编辑及删除保护，并保留 ZIP 导入与菜单栏入口。独立签名更新通道由发布者配置。详见 [GUI 使用说明](macos/GUI使用说明.md) 和 [更新服务部署](macos/UPDATER.md)。

@@ -25,6 +25,12 @@ Node.js 按其许可证和随附的第三方许可条款提供。发布目录中
 
 - `THIRD_PARTY/Node.js/LICENSE`
 
+## Codex Startup Animation
+
+Windows 本地整合包含用户提供的 `codex-startup-animation` 项目的动画代码与默认头像、背景、轮廓素材，位于 `windows/assets/startup-animation/`。只复用同窗口动画，不使用其独立启动器或静态壁纸。
+
+该项目的来源说明尚未指定代码的开源许可证；动画代码与角色图片不因本项目的 MIT License 获得重新授权。保留随目录附带的来源与素材说明。
+
 ## Built-in skin asset disclaimer
 
 本软件内置的相关皮肤素材仅供非营利演示、学习与交流使用，不代表素材所涉及的作者、人物、角色、品牌或权利人参与、认可或赞助本项目。相关图片、人物肖像、角色形象、商标及其他权利归各自权利人所有，且不属于本项目根 MIT License 的授权范围。

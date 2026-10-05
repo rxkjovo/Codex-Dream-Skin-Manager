@@ -13,6 +13,11 @@ if ([regex]::Matches($source, $imports).Count -ne 3) { throw 'Could not isolate 
 $source = [regex]::Replace($source, $imports, '')
 $source = $source.Replace('$Injector = Join-Path $PSScriptRoot ''injector.mjs''', '$Injector = ''mock-injector.mjs''')
 $source = $source.Replace('(Split-Path -Parent $PSScriptRoot)', '''mock-skill-root''')
+# The presentation hook must stay outside these process/config fixtures.
+$source = $source.Replace(
+  '$animationScript = Join-Path $PSScriptRoot ''play-startup-animation.mjs''',
+  '$animationScript = Join-Path $StateRoot (''fixture-animation-disabled-'' + [guid]::NewGuid().ToString(''N'') + ''.mjs'')'
+)
 $source = $source.Replace('$ConfigPath = Join-Path $HOME ''.codex\config.toml''', '$ConfigPath = Join-Path $StateRoot ''fixture-config.toml''')
 if ($source.Contains('$PSScriptRoot') -or $source.Contains('$HOME')) { throw 'Startup fixture contains an unisolated path.' }
 $startBlock = [scriptblock]::Create($source)
@@ -95,6 +100,18 @@ function ConvertTo-DreamSkinProcessArgument { param([string]$Value); return $Val
 function Get-DreamSkinProcessStartedAt { param([int]$ProcessId); return '2026-09-23T00:00:00.0000000Z' }
 function Start-Process { [CmdletBinding()] param([string]$FilePath, [object[]]$ArgumentList, [string]$WindowStyle,
   [switch]$PassThru, [string]$RedirectStandardOutput, [string]$RedirectStandardError)
+  if ($PSBoundParameters.ContainsKey('RedirectStandardOutput') -or
+    $PSBoundParameters.ContainsKey('RedirectStandardError')) {
+    throw 'The watcher must own its log files instead of PowerShell redirecting its streams.'
+  }
+  foreach ($logFlag in @('--stdout-log', '--stderr-log')) {
+    $logIndex = [array]::IndexOf($ArgumentList, $logFlag)
+    if (@($ArgumentList | Where-Object { "$_" -ceq $logFlag }).Count -ne 1 -or
+      $logIndex + 1 -ge $ArgumentList.Count -or
+      [string]::IsNullOrWhiteSpace("$($ArgumentList[$logIndex + 1])")) {
+      throw "The watcher did not receive its $logFlag file."
+    }
+  }
   $script:events += 'injector'
   return [pscustomobject]@{ Id = 4242; HasExited = $false }
 }

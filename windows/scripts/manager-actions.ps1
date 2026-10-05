@@ -904,6 +904,20 @@ function Get-ManagerInjectorStatus {
   if (-not $visibleProcess) {
     return [pscustomobject]@{ Kind = 'stale'; Message = "记录的注入器进程已不存在（PID $processId）。"; Running = $false }
   }
+  # A restart can reuse the old injector's PID for an unrelated process.
+  # A readable, different start time proves the saved watcher has ended; it
+  # does not indicate an unsafe live injector that needs forced recovery.
+  $currentStartedAt = Get-DreamSkinProcessStartedAt -ProcessId $processId
+  if ($currentStartedAt -and $State.injectorStartedAt) {
+    if ((Test-DreamSkinTimestampEqual -Left $State.injectorStartedAt -Right $State.injectorStartedAt) -and
+      -not (Test-DreamSkinTimestampEqual -Left $currentStartedAt -Right $State.injectorStartedAt)) {
+      return [pscustomobject]@{
+        Kind = 'stale'
+        Message = "原皮肤注入器已结束，PID $processId 已由其他进程使用；可重新应用皮肤。"
+        Running = $false
+      }
+    }
+  }
   $process = Get-CimInstance Win32_Process -Filter "ProcessId = $processId" -OperationTimeoutSec 3 -ErrorAction SilentlyContinue
   if (-not $process) {
     return [pscustomobject]@{ Kind = 'uninspectable'; Message = "进程存在，但系统不允许核验其命令行（PID $processId）。"; Running = $false }

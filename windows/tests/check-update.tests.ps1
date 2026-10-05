@@ -26,13 +26,13 @@ function Assert-Throws([scriptblock]$Action, [string]$Pattern, [string]$Message)
 . $UpdateScript
 
 $installerName = 'CodexDreamSkinManager-v1.7.0-windows-x64-setup.exe'
-$installerUrl = "https://github.com/xxloocee/Codex-Dream-Skin-Manager/releases/download/v1.7.0/$installerName"
-$checksumUrl = 'https://github.com/xxloocee/Codex-Dream-Skin-Manager/releases/download/v1.7.0/SHA256SUMS.txt'
+$installerUrl = "https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases/download/v1.7.0/$installerName"
+$checksumUrl = 'https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases/download/v1.7.0/SHA256SUMS.txt'
 $release = [pscustomobject]@{
   tag_name = 'v1.7.0'
   draft = $false
   prerelease = $false
-  html_url = 'https://github.com/xxloocee/Codex-Dream-Skin-Manager/releases/tag/v1.7.0'
+  html_url = 'https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases/tag/v1.7.0'
   assets = @(
     [pscustomobject]@{ name = $installerName; browser_download_url = $installerUrl },
     [pscustomobject]@{ name = 'SHA256SUMS.txt'; browser_download_url = $checksumUrl }

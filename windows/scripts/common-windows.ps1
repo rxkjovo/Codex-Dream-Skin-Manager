@@ -1351,6 +1351,22 @@ function Stop-DreamSkinRecordedInjector {
   $processId = [int]$State.injectorPid
   $processHandle = Get-Process -Id $processId -ErrorAction SilentlyContinue
   if (-not $processHandle) { return $true }
+  try {
+    $processStartedAt = $processHandle.StartTime.ToUniversalTime()
+    $startedAt = $processStartedAt.ToString('o')
+  } catch {
+    if ($processHandle.HasExited) { return $true }
+    throw "The recorded injector PID $processId is running, but its start time cannot be inspected. State was preserved."
+  }
+  if ($State.injectorStartedAt) {
+    # A persisted PID can belong to an unrelated process after reboot. Prove
+    # the start time differs before requesting its CIM identity: stale state
+    # should be archived by the caller, never block or kill the reused PID.
+    if ((Test-DreamSkinTimestampEqual -Left $State.injectorStartedAt -Right $State.injectorStartedAt) -and
+      -not (Test-DreamSkinTimestampEqual -Left $startedAt -Right $State.injectorStartedAt)) {
+      return $false
+    }
+  }
   $process = Get-CimInstance Win32_Process -Filter "ProcessId = $processId" -ErrorAction SilentlyContinue
   if (-not $process) {
     if ($processHandle.HasExited) { return $true }
@@ -1366,6 +1382,9 @@ function Stop-DreamSkinRecordedInjector {
   }
   $processPath = Get-DreamSkinProcessExecutablePath -ProcessInfo $process
   $commandLine = "$($process.CommandLine)"
+  if ($processPath -and [System.IO.Path]::GetFileName("$processPath") -ine 'node.exe') {
+    return $false
+  }
   if (-not $processPath -or -not $commandLine) {
     throw "The recorded injector PID $processId is running, but its identity cannot be inspected. State was preserved."
   }
@@ -1384,12 +1403,6 @@ function Stop-DreamSkinRecordedInjector {
   if ($State.browserId) {
     $browserPattern = '(?:^|\s)(?i:--browser-id)(?:=|\s+)' + [regex]::Escape("$($State.browserId)") + '(?=$|\s)'
     $injectorMatches = $injectorMatches -and [regex]::IsMatch($commandLine, $browserPattern)
-  }
-  try {
-    $startedAt = $processHandle.StartTime.ToUniversalTime().ToString('o')
-  } catch {
-    if ($processHandle.HasExited) { return $true }
-    throw "The recorded injector PID $processId is running, but its start time cannot be inspected. State was preserved."
   }
   $startMatches = -not $State.injectorStartedAt -or
     (Test-DreamSkinTimestampEqual -Left $startedAt -Right $State.injectorStartedAt)

@@ -16,6 +16,11 @@ $source = $source.Replace(
   '$Injector = ''mock-injector.mjs'''
 )
 $source = $source.Replace('(Split-Path -Parent $PSScriptRoot)', '''mock-skill-root''')
+# The presentation hook must stay outside these process/config fixtures.
+$source = $source.Replace(
+  '$animationScript = Join-Path $PSScriptRoot ''play-startup-animation.mjs''',
+  '$animationScript = Join-Path $StateRoot (''fixture-animation-disabled-'' + [guid]::NewGuid().ToString(''N'') + ''.mjs'')'
+)
 $source = $source.Replace('$ConfigPath = Join-Path $HOME ''.codex\config.toml''',
   '$ConfigPath = Join-Path $StateRoot ''fixture-config.toml''')
 if ($source.Contains('$PSScriptRoot') -or $source.Contains('$HOME')) {

@@ -496,9 +496,12 @@ try {
     $injectorArgs = @((ConvertTo-DreamSkinProcessArgument -Value $Injector), '--watch', '--port', "$Port",
       '--browser-id', $cdpIdentity.BrowserId, '--theme-dir',
       (ConvertTo-DreamSkinProcessArgument -Value $themePaths.Active), '--pause-file',
-      (ConvertTo-DreamSkinProcessArgument -Value $themePaths.PauseFile))
-    $daemon = Start-Process -FilePath $node.Path -ArgumentList $injectorArgs -WindowStyle Hidden -PassThru `
-      -RedirectStandardOutput $StdoutPath -RedirectStandardError $StderrPath
+      (ConvertTo-DreamSkinProcessArgument -Value $themePaths.PauseFile), '--stdout-log',
+      (ConvertTo-DreamSkinProcessArgument -Value $StdoutPath), '--stderr-log',
+      (ConvertTo-DreamSkinProcessArgument -Value $StderrPath))
+    # The watcher owns its files. Start-Process output redirection leaves
+    # Windows PowerShell waiting on its live output-pump threads after startup.
+    $daemon = Start-Process -FilePath $node.Path -ArgumentList $injectorArgs -WindowStyle Hidden -PassThru
     Start-Sleep -Milliseconds 250
     if ($daemon.HasExited) { throw "The injector exited during startup. See $StderrPath" }
 
@@ -705,6 +708,32 @@ try {
       }
     }
     throw $startupError
+  }
+
+  # Play only after this invocation actually launched Codex and committed a
+  # verified skin. Reconnecting a watcher or switching themes stays immediate.
+  # Animation is optional presentation; failure must never roll back the skin.
+  if ($launchedWithCdp) {
+    $animationScript = Join-Path $PSScriptRoot 'play-startup-animation.mjs'
+    $animationLog = Join-Path $StateRoot 'startup-animation.log'
+    if (Test-Path -LiteralPath $animationScript -PathType Leaf) {
+      try {
+        $animation = Invoke-DreamSkinNative -FilePath $node.Path -ArgumentList @(
+          $animationScript, '--port', "$Port", '--browser-id', $cdpIdentity.BrowserId,
+          '--theme-dir', $themePaths.Active, '--timeout-ms', '8000')
+        Write-DreamSkinUtf8FileAtomically -Path $animationLog -Content (
+          ($animation.Output -join "`r`n") + "`r`n")
+        if ($animation.ExitCode -ne 0) {
+          Write-Warning "皮肤已启用，但启动动画未能开始。详情：$animationLog"
+        }
+      } catch {
+        try {
+          Write-DreamSkinUtf8FileAtomically -Path $animationLog -Content (
+            "$($_.Exception.Message)`r`n")
+        } catch {}
+        Write-Warning "皮肤已启用，启动动画接入失败。详情：$animationLog"
+      }
+    }
   }
 
   Write-Host "Codex Dream Skin is active on verified loopback port $Port."

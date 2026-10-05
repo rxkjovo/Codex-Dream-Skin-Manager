@@ -15,7 +15,7 @@ Codex Dream Skin 通过本机回环 CDP 给官方 Codex Windows 桌面应用加�
 
 ## Release 安装（推荐普通用户）
 
-普通用户请从 [GitHub Releases](https://github.com/xxloocee/Codex-Dream-Skin-Manager/releases) 下载
+普通用户请从 [GitHub Releases](https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases) 下载
 `CodexDreamSkinManager-vX.Y.Z-windows-x64-setup.exe`，按 [`docs/install-windows.md`](../docs/install-windows.md) 的图形
 界面步骤安装。安装器自带固定 Node 运行时，不需要 clone 仓库或运行 `.ps1`；默认按当前用户安装，
 不应要求管理员权限。未签名的新下载偶尔会触发 SmartScreen，按“更多信息 → 仍要运行”即可，
@@ -149,6 +149,7 @@ powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File .\scripts\restore-
 | 注入器日志 | `%LOCALAPPDATA%\CodexDreamSkin\injector.log` |
 | 注入器错误日志 | `%LOCALAPPDATA%\CodexDreamSkin\injector-error.log` |
 | 验证日志 | `%LOCALAPPDATA%\CodexDreamSkin\verify.log` |
+| 启动动画日志 | `%LOCALAPPDATA%\CodexDreamSkin\startup-animation.log` |
 | Codex 配置 | `%USERPROFILE%\.codex\config.toml` |
 
 更完整的平台路径说明见 [`../docs/platforms.md`](../docs/platforms.md)。

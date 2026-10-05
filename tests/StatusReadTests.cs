@@ -33,13 +33,30 @@ if ($Action -ne 'Status' -or -not $SkipThemes) { throw 'Unexpected expensive rea
                     AssertEqual("皮肤服务运行中", GetPrivateField<TextBlock>(window, "statusText").Text);
                 });
             });
-            Run("Quiet refresh failure repaints the retained runtime state", delegate
+            Run("Quiet refresh failure marks uncertainty while retaining runtime data and recovers on the next read", delegate
             {
                 WithStatusWindow("throw 'read failed'", delegate(MainWindow window, string root)
                 {
                     AssertTrue(!WaitForTask(InvokeRefresh(window, false, false), window.Dispatcher));
-                    AssertEqual("皮肤运行中", GetPrivateField<TextBlock>(window, "statusText").Text);
-                    AssertEqual("running", GetPrivateField<DreamSkinStatus>(window, "currentStatus").StatusKind);
+                    AssertEqual("状态暂不可用", GetPrivateField<TextBlock>(window, "statusText").Text);
+                    DreamSkinStatus status = GetPrivateField<DreamSkinStatus>(window, "currentStatus");
+                    AssertEqual("error", status.StatusKind);
+                    AssertTrue(status.IsRunning);
+                    AssertEqual("old-active", status.ActiveThemeId);
+                    AssertTrue(status.StatusMessage.Contains("read failed"));
+                    AssertEqual("old", ((ThemeOption)GetPrivateField<ListBox>(window, "themeList").Items[0]).Id);
+                    File.WriteAllText(Path.Combine(root, "windows", "scripts", "manager-actions.ps1"), @"
+param($Action,$SkillRoot,[switch]$Quick,[switch]$SkipThemes)
+if ($Action -ne 'Status' -or -not $SkipThemes) { throw 'Unexpected expensive read' }
+'{""isRunning"":true,""statusKind"":""running"",""activeThemeId"":""fresh-active"",""rendererStatus"":""unchecked"",""themes"":[]}'
+", new UTF8Encoding(true));
+                    AssertTrue(WaitForTask(InvokeRefresh(window, false, false), window.Dispatcher));
+                    status = GetPrivateField<DreamSkinStatus>(window, "currentStatus");
+                    AssertEqual("running", status.StatusKind);
+                    AssertTrue(status.IsRunning);
+                    AssertEqual("fresh-active", status.ActiveThemeId);
+                    AssertEqual("皮肤服务运行中", GetPrivateField<TextBlock>(window, "statusText").Text);
+                    AssertEqual("old", ((ThemeOption)GetPrivateField<ListBox>(window, "themeList").Items[0]).Id);
                 });
             });
             Run("Read and mutation timeout policies remain separate", delegate

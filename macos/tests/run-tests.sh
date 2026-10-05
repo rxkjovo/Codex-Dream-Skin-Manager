@@ -111,7 +111,7 @@ UPDATE_JSON="$({
   const value = JSON.parse(process.argv[1]);
   if (value.currentVersion !== `v${process.argv[2].trim()}` || value.latestVersion !== "v9.8.7") process.exit(1);
   if (!value.updateAvailable) process.exit(1);
-  if (value.releaseUrl !== "https://github.com/xxloocee/Codex-Dream-Skin-Manager/releases/latest") process.exit(1);
+  if (value.releaseUrl !== "https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases/latest") process.exit(1);
 ' "$UPDATE_JSON" "$(cat "$ROOT/VERSION")"
 if /usr/bin/grep -R -n -E --exclude-dir='.build' \
   --exclude-dir='.build-*' \

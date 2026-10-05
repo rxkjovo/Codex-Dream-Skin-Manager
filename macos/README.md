@@ -20,7 +20,7 @@ The native AppKit/SwiftUI manager now includes a theme library, parameter editor
 
 ## Release install (recommended)
 
-普通用户请从 [GitHub Releases](https://github.com/xxloocee/Codex-Dream-Skin-Manager/releases) 下载
+普通用户请从 [GitHub Releases](https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases) 下载
 Intel Mac 选择 `CodexDreamSkinManager-vX.Y.Z-macos-x64.dmg`，Apple Silicon Mac 选择
 `CodexDreamSkinManager-vX.Y.Z-macos-arm64.dmg`，按本页下方的 Release install 图形界面步骤
 拖入 Applications。首次运行可能需要在“系统设置 → 隐私与安全性 → 仍要打开”确认一次；不需要

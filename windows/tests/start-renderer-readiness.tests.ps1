@@ -18,6 +18,11 @@ $source = $source.Replace(
   '(Split-Path -Parent $PSScriptRoot)',
   '''mock-skill-root'''
 )
+# The presentation hook must stay outside these process/config fixtures.
+$source = $source.Replace(
+  '$animationScript = Join-Path $PSScriptRoot ''play-startup-animation.mjs''',
+  '$animationScript = Join-Path $StateRoot (''fixture-animation-disabled-'' + [guid]::NewGuid().ToString(''N'') + ''.mjs'')'
+)
 if ($source.Contains('$PSScriptRoot')) {
   throw 'Start readiness fixture left a real script-root dependency in the isolated source.'
 }
@@ -139,6 +144,18 @@ function Start-Process {
     [string]$RedirectStandardOutput,
     [string]$RedirectStandardError
   )
+  if ($PSBoundParameters.ContainsKey('RedirectStandardOutput') -or
+    $PSBoundParameters.ContainsKey('RedirectStandardError')) {
+    throw 'The watcher must own its log files instead of PowerShell redirecting its streams.'
+  }
+  foreach ($logFlag in @('--stdout-log', '--stderr-log')) {
+    $logIndex = [array]::IndexOf($ArgumentList, $logFlag)
+    if (@($ArgumentList | Where-Object { "$_" -ceq $logFlag }).Count -ne 1 -or
+      $logIndex + 1 -ge $ArgumentList.Count -or
+      [string]::IsNullOrWhiteSpace("$($ArgumentList[$logIndex + 1])")) {
+      throw "The watcher did not receive its $logFlag file."
+    }
+  }
   return $script:daemon
 }
 function Get-DreamSkinProcessStartedAt { param([int]$ProcessId); return '2026-07-25T00:00:00.0000000Z' }

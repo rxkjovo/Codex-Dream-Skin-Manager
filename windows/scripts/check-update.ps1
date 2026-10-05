@@ -8,7 +8,7 @@ param(
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
-$script:DreamSkinRepository = 'xxloocee/Codex-Dream-Skin-Manager'
+$script:DreamSkinRepository = 'rxkjovo/Codex-Dream-Skin-Manager'
 $script:DreamSkinUpdateManifestUrl = "https://github.com/$script:DreamSkinRepository/releases/latest/download/update.json"
 $script:DreamSkinReleasePage = "https://github.com/$script:DreamSkinRepository/releases/latest"
 $script:DreamSkinMaximumChecksumBytes = 1MB

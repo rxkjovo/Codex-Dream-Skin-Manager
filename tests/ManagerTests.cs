@@ -840,8 +840,11 @@ namespace CodexDreamSkinManager
                             refreshTask = (Task<bool>)refresh.Invoke(window, new object[] { false, true });
                         }));
                         AssertTrue(!WaitForTask(refreshTask, window.Dispatcher));
-                        AssertEqual("running", running.StatusKind);
-                        AssertEqual("皮肤运行中", GetPrivateField<TextBlock>(window, "statusText").Text);
+                        AssertEqual("error", running.StatusKind);
+                        AssertTrue(running.IsRunning);
+                        AssertTrue(running.StatusMessage.Contains("transient status failure"));
+                        AssertEqual("状态暂不可用", GetPrivateField<TextBlock>(window, "statusText").Text);
+                        AssertEqual("selected", ((ThemeOption)themes.SelectedItem).Id);
                         AssertTrue(GetPrivateField<Button>(window, "applyThemeButton").IsEnabled);
                         AssertTrue(GetPrivateField<Button>(window, "refreshButton").IsEnabled);
 
@@ -853,7 +856,11 @@ namespace CodexDreamSkinManager
                         }));
                         WaitForTask(operation, window.Dispatcher);
                         AssertTrue(!(bool)ReadMemberObject(window, "operationRunning"));
+                        AssertEqual("error", running.StatusKind);
+                        AssertTrue(running.IsRunning);
+                        AssertEqual("状态暂不可用", GetPrivateField<TextBlock>(window, "statusText").Text);
                         AssertTrue(GetPrivateField<Button>(window, "applyThemeButton").IsEnabled);
+                        AssertTrue(GetPrivateField<Button>(window, "refreshButton").IsEnabled);
 
                         running.IsRunning = false;
                         running.StatusKind = "mismatch";
@@ -922,7 +929,7 @@ namespace CodexDreamSkinManager
                 finally { Directory.Delete(root, true); }
             });
 
-            Run("Keeps the expected stopped state when restore refresh fails", delegate
+            Run("Keeps the expected stopped runtime fields while marking failed restore refresh as unknown", delegate
             {
                 string root = CreateLayout();
                 File.WriteAllText(Path.Combine(root, "windows", "scripts", "manager-actions.ps1"),
@@ -952,11 +959,17 @@ namespace CodexDreamSkinManager
                         Task operation = (Task)runOperation.Invoke(window, new object[] { action, "restored", true });
                         WaitForTask(operation, window.Dispatcher);
 
-                        AssertEqual("stopped", running.StatusKind);
+                        AssertEqual("error", running.StatusKind);
                         AssertTrue(!running.IsRunning);
+                        AssertTrue(!running.IsPaused);
+                        AssertEqual("unavailable", running.RendererStatus);
+                        AssertTrue(running.StatusMessage.Contains("transient status failure"));
+                        AssertEqual("状态暂不可用", GetPrivateField<TextBlock>(window, "statusText").Text);
+                        AssertTrue(!(bool)ReadMemberObject(window, "operationRunning"));
                         AssertEqual("应用皮肤",
                             Convert.ToString(GetPrivateField<Button>(window, "applyThemeButton").Content));
                         AssertTrue(GetPrivateField<Button>(window, "applyThemeButton").IsEnabled);
+                        AssertTrue(GetPrivateField<Button>(window, "refreshButton").IsEnabled);
                     }
                     finally
                     {

@@ -1,10 +1,11 @@
 import { probeVideoDecode } from "./video-decode-probe.mjs";
 import fs from "node:fs/promises";
-import { constants as fsConstants, writeSync } from "node:fs";
+import { closeSync, constants as fsConstants, openSync, writeSync } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { format } from "node:util";
 import { MAX_IMAGE_FRAMES, readImageAnimation, readImageMetadata } from "./image-metadata.mjs";
 import {
   normalizeThemeColor,
@@ -15,6 +16,7 @@ import { decodeAndValidateSafeCss } from "../assets/safe-css-validator.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
+let diagnostics = console;
 // CLI one-shot calls share one budget across connection, all windows, and
 // verification. Imported helpers and the long-lived watcher retain their own limits.
 let operationDeadline = Infinity;
@@ -24,19 +26,22 @@ function remainingOperationTime(requestedMs) {
   if (remaining <= 0) throw new Error("Dream Skin renderer operation timed out");
   return remaining;
 }
-const SELECTOR_CONTRACT = JSON.parse(await fs.readFile(
-  path.join(root, "assets", "selectors.json"), "utf8",
-));
-if (SELECTOR_CONTRACT.schema !== "codex-dream-skin-selectors/1" ||
-  !Array.isArray(SELECTOR_CONTRACT.selectors)) {
-  throw new Error("assets/selectors.json has an unsupported schema");
-}
+let SELECTOR_CONTRACT;
 const SELECTOR_MAP = new Map();
-for (const entry of SELECTOR_CONTRACT.selectors) {
-  if (!entry?.key || !entry.selector || SELECTOR_MAP.has(entry.key)) {
-    throw new Error(`assets/selectors.json has an invalid selector key: ${entry?.key || "<missing>"}`);
+async function initializeSelectorContract() {
+  SELECTOR_CONTRACT = JSON.parse(await fs.readFile(
+    path.join(root, "assets", "selectors.json"), "utf8",
+  ));
+  if (SELECTOR_CONTRACT.schema !== "codex-dream-skin-selectors/1" ||
+    !Array.isArray(SELECTOR_CONTRACT.selectors)) {
+    throw new Error("assets/selectors.json has an unsupported schema");
   }
-  SELECTOR_MAP.set(entry.key, entry.selector);
+  for (const entry of SELECTOR_CONTRACT.selectors) {
+    if (!entry?.key || !entry.selector || SELECTOR_MAP.has(entry.key)) {
+      throw new Error(`assets/selectors.json has an invalid selector key: ${entry?.key || "<missing>"}`);
+    }
+    SELECTOR_MAP.set(entry.key, entry.selector);
+  }
 }
 const selectorFor = (key) => {
   const selector = SELECTOR_MAP.get(key);
@@ -50,7 +55,7 @@ const stableTestidLiteral = (testid) => {
   }
   return JSON.stringify(`[data-testid="${testid}"]`);
 };
-const SKIN_VERSION = "2.0.2";
+const SKIN_VERSION = "2.0.3";
 // .github/workflows/ci.yml's version-consistency check greps this file for a
 // literal `const SKIN_VERSION = "...";` line, so the export stays a separate
 // statement rather than an inline `export const`.
@@ -198,6 +203,8 @@ function parseArgs(argv) {
     operationUiState: null,
     operationMessage: null,
     operationToken: null,
+    stdoutLog: null,
+    stderrLog: null,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -215,6 +222,13 @@ function parseArgs(argv) {
     else if (arg === "--browser-id") options.browserId = argv[++i];
     else if (arg === "--theme-dir") options.themeDir = path.resolve(argv[++i]);
     else if (arg === "--pause-file") options.pauseFile = path.resolve(argv[++i]);
+    else if (arg === "--stdout-log" || arg === "--stderr-log") {
+      const value = argv[++i];
+      if (typeof value !== "string" || !value || value.startsWith("--") || value.includes("\0")) {
+        throw new Error(`${arg} requires a log file path`);
+      }
+      options[arg === "--stdout-log" ? "stdoutLog" : "stderrLog"] = path.resolve(value);
+    }
     else if (arg === "--screenshot") options.screenshot = path.resolve(argv[++i]);
     else if (arg === "--operation-kind") options.operationKind = argv[++i];
     else if (arg === "--operation-ui-state") options.operationUiState = argv[++i];
@@ -259,7 +273,55 @@ function parseArgs(argv) {
   ].includes(options.mode) && !options.browserId) {
     throw new Error(`--browser-id is required in ${options.mode} mode`);
   }
+  if (options.stdoutLog !== null || options.stderrLog !== null) {
+    if (options.mode !== "watch" || !options.stdoutLog || !options.stderrLog) {
+      throw new Error("--stdout-log and --stderr-log must be supplied together in watch mode");
+    }
+    const comparePath = (value) => process.platform === "win32" ? value.toLowerCase() : value;
+    if (comparePath(options.stdoutLog) === comparePath(options.stderrLog)) {
+      throw new Error("Watcher stdout and stderr logs must use different files");
+    }
+  }
   return options;
+}
+
+function openWatchLogs(options) {
+  const descriptors = [];
+  const write = (descriptor, args) => {
+    const bytes = Buffer.from(format(...args) + "\n", "utf8");
+    let offset = 0;
+    while (offset < bytes.length) {
+      const written = writeSync(descriptor, bytes, offset, bytes.length - offset);
+      if (written <= 0) throw new Error("Watcher log write did not complete");
+      offset += written;
+    }
+  };
+  const close = () => {
+    for (const descriptor of descriptors.splice(0)) {
+      try { closeSync(descriptor); } catch {}
+    }
+  };
+  try {
+    const stderr = openSync(options.stderrLog, "w", 0o600);
+    descriptors.push(stderr);
+    const stdout = openSync(options.stdoutLog, "w", 0o600);
+    descriptors.push(stdout);
+    // Keep logging local to this CLI instance. Synchronous writes survive
+    // manager exit and need no PowerShell output-pump threads or final flush.
+    return {
+      logger: {
+        log: (...args) => write(stdout, args),
+        error: (...args) => write(stderr, args),
+      },
+      close,
+    };
+  } catch (error) {
+    if (descriptors.length) {
+      try { write(descriptors[0], [`[dream-skin] Could not open watcher logs: ${error.stack || error}`]); } catch {}
+    }
+    close();
+    throw error;
+  }
 }
 
 function validatedDebuggerUrl(target, port) {
@@ -483,7 +545,7 @@ async function listAppTargets(port, expectedBrowserId = null) {
   return targets.filter((item) => isValidCdpPageTarget(item, port));
 }
 
-async function connectBrowserIdentityAnchor(port, expectedBrowserId) {
+export async function connectBrowserIdentityAnchor(port, expectedBrowserId) {
   const version = await fetchCdpJson(port, "/json/version");
   const actualBrowserId = browserIdFromVersion(version, port);
   if (actualBrowserId !== expectedBrowserId) {
@@ -1089,7 +1151,7 @@ export async function inspectTargetWindow(session, targetId) {
   };
 }
 
-async function connectCodexTargets(port, timeoutMs, expectedBrowserId) {
+export async function connectCodexTargets(port, timeoutMs, expectedBrowserId) {
   const deadline = Date.now() + remainingOperationTime(timeoutMs);
   let lastError;
   while (Date.now() < deadline) {
@@ -1436,7 +1498,7 @@ async function bestEffortOperationUi(session, action, token, state, message, tim
   try {
     return await updateOperationUi(session, action, token, state, message, timeoutMs);
   } catch (error) {
-    console.error(`[dream-skin] client status unavailable: ${error.message}`);
+    diagnostics.error(`[dream-skin] client status unavailable: ${error.message}`);
     return false;
   }
 }
@@ -1952,7 +2014,7 @@ async function runWatch(options) {
     const delayMs = Math.min(30000, baseDelayMs * (2 ** Math.min(failures - 1, 4)));
     const now = Date.now();
     if (error && (failures === 1 || now - previous.lastLogAt >= 30000)) {
-      console.error(`[dream-skin] inject failed for ${target.id}: ${error.message}; retrying in ${delayMs}ms`);
+      diagnostics.error(`[dream-skin] inject failed for ${target.id}: ${error.message}; retrying in ${delayMs}ms`);
       previous.lastLogAt = now;
     }
     targetFailures.set(target.id, { failures, lastLogAt: previous.lastLogAt, until: now + delayMs });
@@ -1971,7 +2033,7 @@ async function runWatch(options) {
             : bindMediaFileToSession(session, loadedPayload);
         operation.catch((error) => {
           if (Date.now() - lastReinjectErrorLogAt >= 30000) {
-            console.error(`[dream-skin] reinject failed for ${target.id}: ${error.message}`);
+            diagnostics.error(`[dream-skin] reinject failed for ${target.id}: ${error.message}`);
             lastReinjectErrorLogAt = Date.now();
           }
         });
@@ -2010,11 +2072,11 @@ async function runWatch(options) {
         identityAnchor.close();
         identityAnchor = replacement;
         identityReconnectFailures = 0;
-        console.log("[dream-skin] CDP browser identity reconnected");
+        diagnostics.log("[dream-skin] CDP browser identity reconnected");
         return true;
       } catch (error) {
         if (error instanceof CdpIdentityMismatchError) {
-          console.error(`[dream-skin] CDP browser identity changed during handoff; watcher is stopping: ${error.message}`);
+          diagnostics.error(`[dream-skin] CDP browser identity changed during handoff; watcher is stopping: ${error.message}`);
           process.exitCode = 3;
           stopping = true;
           return false;
@@ -2023,7 +2085,7 @@ async function runWatch(options) {
         const retryMs = nextIdentityReconnectDelay(identityReconnectFailures);
         const now = Date.now();
         if (identityReconnectFailures === 1 || now - lastIdentityReconnectLogAt >= 30000) {
-          console.error(`[dream-skin] ${new Date().toISOString()} ${error.message}; waiting for the verified CDP identity (retrying in ${retryMs}ms)`);
+          diagnostics.error(`[dream-skin] ${new Date().toISOString()} ${error.message}; waiting for the verified CDP identity (retrying in ${retryMs}ms)`);
           lastIdentityReconnectLogAt = now;
         }
         await new Promise((resolve) => setTimeout(resolve, retryMs));
@@ -2046,14 +2108,14 @@ async function runWatch(options) {
         listFailures = 0;
       } catch (error) {
         if (error instanceof CdpIdentityMismatchError) {
-          console.error(`[dream-skin] CDP browser identity changed while watching; watcher is stopping: ${error.message}`);
+          diagnostics.error(`[dream-skin] CDP browser identity changed while watching; watcher is stopping: ${error.message}`);
           process.exitCode = 3;
           break;
         }
         listFailures += 1;
         const retryMs = Math.min(10000, 1000 * (2 ** Math.min(listFailures - 1, 4)));
         if (listFailures === 1 || Date.now() - lastListErrorLogAt >= 30000) {
-          console.error(`[dream-skin] ${new Date().toISOString()} ${error.message}; retrying in ${retryMs}ms`);
+          diagnostics.error(`[dream-skin] ${new Date().toISOString()} ${error.message}; retrying in ${retryMs}ms`);
           lastListErrorLogAt = Date.now();
         }
         await new Promise((resolve) => setTimeout(resolve, retryMs));
@@ -2084,7 +2146,7 @@ async function runWatch(options) {
           }
         } catch (error) {
           if (Date.now() - lastThemeErrorLogAt >= 30000) {
-            console.error(`[dream-skin] theme update rejected: ${error.message}; keeping the active theme`);
+            diagnostics.error(`[dream-skin] theme update rejected: ${error.message}; keeping the active theme`);
             lastThemeErrorLogAt = Date.now();
           }
         }
@@ -2115,7 +2177,7 @@ async function runWatch(options) {
                 fallbackTargets.set(id, false);
               } catch (error) {
                 fallbackTargets.set(id, true);
-                console.error(`[dream-skin] early theme refresh unavailable for ${id}: ${error.message}`);
+                diagnostics.error(`[dream-skin] early theme refresh unavailable for ${id}: ${error.message}`);
                 attachLoadFallback(id, { id }, session);
               }
               if (nextEarlyScript) earlyScripts.set(id, nextEarlyScript);
@@ -2125,7 +2187,7 @@ async function runWatch(options) {
               if (loadedPayload.mediaFilePath) attachLoadFallback(id, { id }, session);
             }
           } catch (error) {
-            console.error(`[dream-skin] live theme update failed for ${id}: ${error.message}`);
+            diagnostics.error(`[dream-skin] live theme update failed for ${id}: ${error.message}`);
             await removeEarlyPayload(session, earlyScripts.get(id));
             earlyScripts.delete(id);
             fallbackTargets.delete(id);
@@ -2134,7 +2196,7 @@ async function runWatch(options) {
             sessions.delete(id);
           }
         }
-        console.log(paused ? "[dream-skin] paused" : `[dream-skin] active theme ${loadedPayload.theme.id}`);
+        diagnostics.log(paused ? "[dream-skin] paused" : `[dream-skin] active theme ${loadedPayload.theme.id}`);
       }
 
       const activeIds = new Set(targets.map((target) => target.id));
@@ -2176,7 +2238,7 @@ async function runWatch(options) {
               await removeEarlyPayload(session, earlyScriptId);
               earlyScriptId = null;
               earlyInjectionFallback = true;
-              console.error(`[dream-skin] early injection unavailable for ${target.id}: ${error.message}`);
+              diagnostics.error(`[dream-skin] early injection unavailable for ${target.id}: ${error.message}`);
             }
           }
           const probe = await waitForCodexProbe(session);
@@ -2208,7 +2270,7 @@ async function runWatch(options) {
           sessions.set(target.id, session);
           if (earlyScriptId) earlyScripts.set(target.id, earlyScriptId);
           targetFailures.delete(target.id);
-          console.log(`[dream-skin] injected target ${target.id}`);
+          diagnostics.log(`[dream-skin] injected target ${target.id}`);
         } catch (error) {
           await removeEarlyPayload(session, earlyScriptId);
           fallbackTargets.delete(target.id);
@@ -2232,8 +2294,8 @@ async function runWatch(options) {
   }
 }
 
-if (path.resolve(process.argv[1] || "") === path.resolve(scriptPath)) {
-  const options = parseArgs(process.argv.slice(2));
+async function main(options) {
+  await initializeSelectorContract();
   if (!["watch", "self-test", "check-payload"].includes(options.mode)) {
     operationDeadline = Date.now() + options.timeoutMs;
     // Bound even an unresolved socket close or renderer promise. Never apply
@@ -2323,4 +2385,42 @@ if (path.resolve(process.argv[1] || "") === path.resolve(scriptPath)) {
   else if (options.mode === "watch") await runWatch(options);
   else await runOneShot(options);
   operationCompleted = true;
+}
+
+if (path.resolve(process.argv[1] || "") === path.resolve(scriptPath)) {
+  let watchLogs;
+  let logUncaughtFailure;
+  let cliFailed = false;
+  try {
+    const options = parseArgs(process.argv.slice(2));
+    if (options.stdoutLog && options.stderrLog) {
+      watchLogs = openWatchLogs(options);
+      diagnostics = watchLogs.logger;
+      logUncaughtFailure = (error) => {
+        try { diagnostics.error(`[dream-skin] ${error.stack || error}`); } catch {}
+      };
+      // Observe fatal asynchronous failures without suppressing Node's normal
+      // termination, so their diagnostics also survive a detached watcher.
+      process.on("uncaughtExceptionMonitor", logUncaughtFailure);
+    }
+    await main(options);
+  } catch (error) {
+    cliFailed = true;
+    const message = `[dream-skin] ${error.stack || error}`;
+    try {
+      if (watchLogs) diagnostics.error(message);
+      else writeSync(2, message + "\n");
+    } catch { try { writeSync(2, message + "\n"); } catch {} }
+  } finally {
+    if (logUncaughtFailure) process.off("uncaughtExceptionMonitor", logUncaughtFailure);
+    diagnostics = console;
+    watchLogs?.close();
+  }
+  // Match Node's previous uncaught CLI failure behavior even if a failed CDP
+  // connection left a socket alive. Diagnostics are already written above.
+  if (cliFailed) process.exit(1);
+} else {
+  // Imported helpers retain the initialized selector contract and default
+  // console without opening files or running the watcher.
+  await initializeSelectorContract();
 }
