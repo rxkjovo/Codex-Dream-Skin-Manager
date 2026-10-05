@@ -74,6 +74,10 @@ if ($Action -ne 'Status' -or -not $SkipThemes) { throw 'Unexpected expensive rea
                 AssertEqual("one", catalog.Themes[0].Id);
                 AssertEqual("skipped broken theme", catalog.Message);
             });
+            Run("Quotes PowerShell literals with the existing ASCII format", delegate
+            {
+                AssertEqual("'C:\\A B\\it''s.png'", PowerShellRunner.QuoteLiteral("C:\\A B\\it's.png"));
+            });
             Run("Normal image switching bypasses startup preflight", delegate
             {
                 AssertApplyFlow(true, false, true, false, "apply", true);
@@ -82,9 +86,35 @@ if ($Action -ne 'Status' -or -not $SkipThemes) { throw 'Unexpected expensive rea
             {
                 AssertApplyFlow(false, false, true, false, "check,apply,start", true);
             });
+            Run("Cold video switching uses one selected-theme startup without consent", delegate
+            {
+                AssertApplyFlow(false, true, false, false, "check,start-only,connect,apply,start", true);
+            });
+            Run("Cold video startup preserves direct media, JSON tags and literal theme values", delegate
+            {
+                AssertApplyFlow(false, true, false, false, "check,start-only,connect,apply,start", true,
+                    false, false, false, true);
+            });
+            Run("Rejected video validation preserves the active theme and never starts injection", delegate
+            {
+                AssertApplyFlow(false, true, true, true, "check,start-only,connect,apply", false);
+            });
+            Run("Failed video connection never publishes a theme or starts injection", delegate
+            {
+                AssertApplyFlow(false, true, true, false, "check,start-only,connect", false, true);
+            });
             Run("Unhealthy video still obtains consent before connecting", delegate
             {
-                AssertApplyFlow(true, true, true, false, "check,confirm,connect,apply,start", true, false, true);
+                AssertApplyFlow(true, true, true, false, "check,confirm,start-only,connect,apply,start", true, false, true);
+            });
+            Run("Declining unhealthy video restart does not publish or invoke selected-theme startup", delegate
+            {
+                AssertApplyFlow(true, true, false, false, "check,confirm", false, false, true);
+            });
+            Run("Existing Codex session requires consent even when the video runtime is stopped", delegate
+            {
+                AssertApplyFlow(false, true, true, false, "check,confirm,start-only,connect,apply,start", true,
+                    false, false, false, false, false, true);
             });
             Run("Connection lost during live apply requests consent before fallback startup", delegate
             {

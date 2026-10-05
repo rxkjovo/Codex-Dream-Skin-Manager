@@ -28,20 +28,36 @@ namespace CodexDreamSkinManager
         {
             RunStatusReadTests();
             if (Array.IndexOf(args, "--status-read-only") >= 0) return ReportResults();
-            Run("Cold video apply connects before validation and starts after publication", delegate {
-                AssertApplyFlow(false, true, true, false, "check,confirm,connect,apply,start", true);
+            Run("Cold video uses one selected-theme startup without restart consent", delegate {
+                AssertApplyFlow(false, true, false, false, "check,start-only,connect,apply,start", true);
             });
             Run("Rejected video preserves active theme and does not start injector", delegate {
-                AssertApplyFlow(false, true, true, true, "check,confirm,connect,apply", false);
+                AssertApplyFlow(false, true, true, true, "check,start-only,connect,apply", false);
             });
             Run("Cancelled video startup does not connect or change theme", delegate {
-                AssertApplyFlow(false, true, false, false, "check,confirm", false);
+                AssertApplyFlow(false, true, false, false, "check,confirm", false, false, true);
             });
             Run("Failed connection never publishes a video or starts an injector", delegate {
-                AssertApplyFlow(false, true, true, false, "check,confirm,connect", false, true);
+                AssertApplyFlow(false, true, true, false, "check,start-only,connect", false, true);
             });
             Run("Lost connection obtains restart consent before video validation", delegate {
-                AssertApplyFlow(true, true, true, false, "check,confirm,connect,apply,start", true, false, true);
+                AssertApplyFlow(true, true, true, false, "check,confirm,start-only,connect,apply,start", true, false, true);
+            });
+            Run("Cold video with an existing Codex session requests consent before one startup", delegate {
+                AssertApplyFlow(false, true, true, false, "check,confirm,start-only,connect,apply,start", true,
+                    false, false, false, false, false, true);
+            });
+            Run("Declining replacement of an existing Codex session never publishes video", delegate {
+                AssertApplyFlow(false, true, false, false, "check,confirm", false,
+                    false, false, false, false, false, true);
+            });
+            Run("Explicit video restart carries consent into selected-theme startup", delegate {
+                AssertApplyFlow(true, true, true, false, "check,confirm,start-only,connect,apply,start", true,
+                    false, false, false, false, true);
+            });
+            Run("Declining explicit video restart never publishes or starts", delegate {
+                AssertApplyFlow(true, true, false, false, "check,confirm", false,
+                    false, false, false, false, true);
             });
             Run("Healthy video apply reuses the running injector", delegate {
                 AssertApplyFlow(true, true, true, false, "apply", true);
@@ -69,11 +85,6 @@ namespace CodexDreamSkinManager
             Run("Rejects missing scripts directory", delegate
             {
                 AssertThrows(delegate { DreamSkinService.FindScriptsDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"))); });
-            });
-
-            Run("Quotes PowerShell literals", delegate
-            {
-                AssertEqual("'C:\\A B\\it''s.png'", PowerShellRunner.QuoteLiteral("C:\\A B\\it's.png"));
             });
 
             Run("Round-trips Chinese PowerShell arguments and output as UTF-8", delegate
@@ -1807,9 +1818,9 @@ namespace CodexDreamSkinManager
 
         private static void AssertApplyFlow(bool running, bool video, bool consent, bool reject,
             string expectedEvents, bool published, bool failConnect = false, bool lostConnection = false,
-            bool failLiveApply = false)
+            bool failLiveApply = false, bool directMedia = false, bool forceRestart = false, bool existingCodex = false)
         {
-            string root = CreateLayout();
+            string root = CreateLayout(true, directMedia ? "-‘主题’" : "");
             string scripts = Path.Combine(root, "windows", "scripts");
             string log = Path.Combine(scripts, "events.txt");
             string active = Path.Combine(scripts, "active.txt");
@@ -1823,31 +1834,130 @@ namespace CodexDreamSkinManager
             if (failConnect) File.WriteAllText(Path.Combine(scripts, "fail-connect"), "yes");
             if (lostConnection) File.WriteAllText(Path.Combine(scripts, "restart-required"), "yes");
             if (failLiveApply) File.WriteAllText(Path.Combine(scripts, "fail-live-apply"), "yes");
+            if (forceRestart) File.WriteAllText(Path.Combine(scripts, "force-restart"), "yes");
+            if (existingCodex) File.WriteAllText(Path.Combine(scripts, "existing-codex"), "yes");
+            if (video && (!running || lostConnection)) File.WriteAllText(Path.Combine(scripts, "fresh-preflight"), "yes");
+            string literalMarker = Path.Combine(scripts, "literal-evaluated");
+            string literalName = "-Candidate 中文 O'Brien O’Brien ‘弯引号’ ‚低引号‛ $(Set-Content -LiteralPath '" +
+                literalMarker.Replace("'", "''") + "' -Value 'yes')";
+            ThemeOption selectedTheme = new ThemeOption {
+                Id = "candidate", Name = literalName, ThemeDirectory = directMedia ? "" : root,
+                ImagePath = Path.Combine(root, video ? "art.mp4" : "art.png"),
+                Category = "custom", Tags = new List<string> { "中文标签", "comma,tag", "smart‘quotes’", "O’Brien", "low‚quotes‛" },
+                Appearance = "dark", FocusX = 0.31, FocusY = 0.69,
+                PositionX = -0.2, PositionY = 0.1, Zoom = 1.35, PositionMode = "free",
+                FramingEnabled = true, SafeArea = "left", TaskMode = "ambient",
+                BubbleOpacity = 0.23, SurfaceOpacity = 0.77, Accent = "#ABCDEF"
+            };
+            JavaScriptSerializer serializer = new JavaScriptSerializer();
+            Dictionary<string, string> expectedTarget = new Dictionary<string, string>();
+            expectedTarget["SkillRoot"] = Path.Combine(root, "windows");
+            if (!directMedia) expectedTarget["ThemeDirectory"] = root;
+            else
+            {
+                expectedTarget["ImagePath"] = selectedTheme.ImagePath;
+                expectedTarget["Name"] = selectedTheme.Name;
+                expectedTarget["ThemeId"] = selectedTheme.Id;
+                expectedTarget["Category"] = selectedTheme.Category;
+                expectedTarget["TagsJson"] = serializer.Serialize(selectedTheme.Tags.ToArray());
+                expectedTarget["Appearance"] = "dark";
+                expectedTarget["FocusX"] = "0.31"; expectedTarget["FocusY"] = "0.69";
+                expectedTarget["PositionX"] = "-0.2"; expectedTarget["PositionY"] = "0.1";
+                expectedTarget["Zoom"] = "1.35"; expectedTarget["PositionMode"] = "free";
+                expectedTarget["FramingEnabled"] = "true"; expectedTarget["SafeArea"] = "left";
+                expectedTarget["TaskMode"] = "ambient"; expectedTarget["BubbleOpacity"] = "0.23";
+                expectedTarget["SurfaceOpacity"] = "0.77"; expectedTarget["Accent"] = "#ABCDEF";
+            }
+            File.WriteAllText(Path.Combine(scripts, "expected-target.json"), serializer.Serialize(expectedTarget), new UTF8Encoding(true));
+            string themeParameters = @"$SkillRoot,$ThemeDirectory,$ImagePath,$Name,$ThemeId,$Category,$TagsJson,
+$Appearance,$FocusX,$FocusY,$PositionX,$PositionY,$Zoom,$PositionMode,$FramingEnabled,
+$SafeArea,$TaskMode,$BubbleOpacity,$SurfaceOpacity,$Accent";
+            string targetAssertions = @"
+function Assert-FixtureThemeTarget {
+  param($Parameters)
+  $expected = Get-Content (Join-Path $PSScriptRoot 'expected-target.json') -Raw | ConvertFrom-Json
+  foreach ($property in $expected.PSObject.Properties) {
+    if (-not $Parameters.ContainsKey($property.Name) -or [string]$Parameters[$property.Name] -cne [string]$property.Value) {
+      throw ('Selected theme argument changed: ' + $property.Name + ', expected ' + [string]$property.Value + ', got ' + [string]$Parameters[$property.Name])
+    }
+  }
+  if ($expected.PSObject.Properties['ThemeDirectory']) {
+    if ($Parameters.ContainsKey('ImagePath') -or $Parameters.ContainsKey('ThemeId')) { throw 'Directory target gained direct-media arguments' }
+  } elseif ($Parameters.ContainsKey('ThemeDirectory')) { throw 'Direct-media target gained a theme directory' }
+}
+";
+            string runtimeCommon = Path.Combine(Environment.CurrentDirectory, "windows", "scripts", "common-windows.ps1");
+            File.WriteAllText(Path.Combine(scripts, "common-windows.ps1"),
+                "$fixtureCommon = " + PowerShellRunner.QuoteLiteral(runtimeCommon) + @"
+$fixtureTokens = $null
+$fixtureErrors = $null
+$fixtureAst = [System.Management.Automation.Language.Parser]::ParseFile($fixtureCommon,[ref]$fixtureTokens,[ref]$fixtureErrors)
+if ($fixtureErrors.Count -ne 0) { throw 'Runtime common script has parse errors' }
+foreach ($fixtureName in @('Invoke-DreamSkinNative','Invoke-DreamSkinPowerShellScript')) {
+  $fixtureFunction = $fixtureAst.Find({ param($node)
+    $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $fixtureName
+  },$true)
+  if (-not $fixtureFunction) { throw ('Runtime forwarding function not found: ' + $fixtureName) }
+  . ([scriptblock]::Create($fixtureFunction.Extent.Text))
+}
+", new UTF8Encoding(true));
             File.WriteAllText(Path.Combine(scripts, "start-dream-skin.ps1"), @"
-param([switch]$CheckOnly,[switch]$ConnectOnly,[switch]$RestartExisting)
+param([switch]$CheckOnly,[switch]$ConnectOnly,[switch]$RestartExisting,[switch]$RequireFreshSession,
+  [string]$RequestedThemeAppearance,[string[]]$ThemeApplyArguments)
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common-windows.ps1')
 $log = Join-Path $PSScriptRoot 'events.txt'
 if ($CheckOnly) {
+  if ($RestartExisting -or $ConnectOnly -or $ThemeApplyArguments) { throw 'Startup preflight has mutation arguments' }
+  if ([bool]$RequireFreshSession -ne (Test-Path (Join-Path $PSScriptRoot 'fresh-preflight'))) { throw 'Video startup lost its fresh-session preflight requirement' }
   Add-Content $log 'check'
-  if (Test-Path (Join-Path $PSScriptRoot 'restart-required')) { throw 'DREAM_SKIN_RESTART_REQUIRED: fixture' }
+  if ((Test-Path (Join-Path $PSScriptRoot 'restart-required')) -or
+      ($RequireFreshSession -and (Test-Path (Join-Path $PSScriptRoot 'existing-codex')))) { throw 'DREAM_SKIN_RESTART_REQUIRED: fixture' }
   return
 }
-if ($ConnectOnly) {
+if ($ConnectOnly) { throw 'Manager used the obsolete separate video connection phase' }
+if ($RequireFreshSession) { throw 'Fresh-session preflight flag reached mutating startup' }
+$requiresRestart = (Test-Path (Join-Path $PSScriptRoot 'restart-required')) -or
+  (Test-Path (Join-Path $PSScriptRoot 'force-restart')) -or (Test-Path (Join-Path $PSScriptRoot 'existing-codex'))
+if ([bool]$RestartExisting -ne [bool]$requiresRestart) { throw 'Startup restart flag does not match the requested restart' }
+if ($RestartExisting -and -not (Test-Path (Join-Path $PSScriptRoot 'restart-authorized'))) { throw 'Startup restarted without consent' }
+if ($ThemeApplyArguments) {
+  if ($RequestedThemeAppearance -cne 'dark') { throw 'Selected theme startup lost its requested appearance' }
+  if (-not (Test-Path (Join-Path $PSScriptRoot 'start-only'))) { throw 'Theme startup bypassed the unified entry point' }
   Add-Content $log 'connect'
-  if (-not $RestartExisting) { throw 'Video connection did not carry restart consent' }
   if (Test-Path (Join-Path $PSScriptRoot 'fail-connect')) { throw 'Fixture connection failure' }
   Set-Content (Join-Path $PSScriptRoot 'connected') 'yes'
-  return
+  $applyResult = Invoke-DreamSkinPowerShellScript -ScriptPath (Join-Path $PSScriptRoot 'manager-actions.ps1') -ArgumentList $ThemeApplyArguments
+  if ($applyResult.ExitCode -ne 0) { throw ($applyResult.Output -join [Environment]::NewLine) }
 }
 if ((Get-Content (Join-Path $PSScriptRoot 'active.txt') -Raw).Trim() -ne 'candidate') { throw 'Started with old theme' }
-if ((Test-Path (Join-Path $PSScriptRoot 'video')) -and -not $RestartExisting) { throw 'Final video startup lost restart consent' }
+if ((Test-Path (Join-Path $PSScriptRoot 'video')) -and -not $ThemeApplyArguments) { throw 'Video startup lost its selected-theme transaction' }
 Add-Content $log 'start'
 ");
-            File.WriteAllText(Path.Combine(scripts, "manager-actions.ps1"), @"
-param($Action,$SkillRoot,$ThemeDirectory,[switch]$DeferLiveApply,[switch]$Quick,[switch]$SkipThemes)
+            File.WriteAllText(Path.Combine(scripts, "apply-theme-and-recover.ps1"),
+                "param([switch]$StartOnly,[switch]$RestartExisting," + themeParameters + ")\n" + targetAssertions + @"
+$ErrorActionPreference = 'Stop'
+if (-not $StartOnly) { throw 'Video startup requested full process recovery' }
+Assert-FixtureThemeTarget $PSBoundParameters
+Add-Content (Join-Path $PSScriptRoot 'events.txt') 'start-only'
+Set-Content (Join-Path $PSScriptRoot 'start-only') 'yes'
+$applyArguments = @('-Action','ApplyTheme')
+$expected = Get-Content (Join-Path $PSScriptRoot 'expected-target.json') -Raw | ConvertFrom-Json
+foreach ($property in $expected.PSObject.Properties) {
+  $applyArguments += @(('-' + $property.Name),[string]$PSBoundParameters[$property.Name])
+}
+$applyArguments += '-DeferLiveApply'
+$startArguments = @{ RequestedThemeAppearance = 'dark'; ThemeApplyArguments = $applyArguments }
+if ($RestartExisting) { $startArguments.RestartExisting = $true }
+& (Join-Path $PSScriptRoot 'start-dream-skin.ps1') @startArguments
+", new UTF8Encoding(true));
+            File.WriteAllText(Path.Combine(scripts, "manager-actions.ps1"),
+                "param($Action," + themeParameters + ",[switch]$DeferLiveApply,[switch]$Quick,[switch]$SkipThemes)\n" + targetAssertions + @"
 $ErrorActionPreference = 'Stop'
 if ($Action -eq 'Status') { Get-Content (Join-Path $PSScriptRoot 'status.json') -Raw; return }
 if ($Action -ne 'ApplyTheme') { throw 'Unexpected action' }
+Assert-FixtureThemeTarget $PSBoundParameters
+if ((Test-Path (Join-Path $PSScriptRoot 'start-only')) -and -not $DeferLiveApply) { throw 'Unified video startup did not defer live apply' }
 Add-Content (Join-Path $PSScriptRoot 'events.txt') 'apply'
 if ((Test-Path (Join-Path $PSScriptRoot 'video')) -and -not (Test-Path (Join-Path $PSScriptRoot 'connected'))) { throw 'No video connection' }
 if (Test-Path (Join-Path $PSScriptRoot 'reject')) { throw 'Fixture decode failure' }
@@ -1858,25 +1968,29 @@ if (Test-Path (Join-Path $PSScriptRoot 'fail-live-apply')) {
   return
 }
 [ordered]@{ rendererApplied = (-not $DeferLiveApply -and (Test-Path (Join-Path $PSScriptRoot 'connected'))) } | ConvertTo-Json
-");
+", new UTF8Encoding(true));
             MainWindow window = null;
             SynchronizationContext previousContext = SynchronizationContext.Current;
             try
             {
                 window = new MainWindow(new DreamSkinService(root), delegate(string operation) {
                     File.AppendAllText(log, "confirm" + Environment.NewLine);
+                    if (consent) File.WriteAllText(Path.Combine(scripts, "restart-authorized"), "yes");
                     return consent;
                 });
                 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(window.Dispatcher));
                 ListBox themes = GetPrivateField<ListBox>(window, "themeList");
-                themes.Items.Add(new ThemeOption { Id = "candidate", Name = "Candidate",
-                    ThemeDirectory = root, ImagePath = Path.Combine(root, video ? "art.mp4" : "art.png") });
+                themes.Items.Add(selectedTheme);
                 themes.SelectedIndex = 0;
                 Task operationTask = (Task)typeof(MainWindow).GetMethod("ApplySelectedThemeAsync",
-                    BindingFlags.Instance | BindingFlags.NonPublic).Invoke(window, new object[] { false });
+                    BindingFlags.Instance | BindingFlags.NonPublic).Invoke(window, new object[] { forceRestart });
                 WaitForTask(operationTask, window.Dispatcher);
-                AssertEqual(expectedEvents, string.Join(",", File.ReadAllLines(log)));
+                string actualEvents = string.Join(",", File.ReadAllLines(log));
+                if (!string.Equals(expectedEvents, actualEvents, StringComparison.Ordinal))
+                    throw new Exception("Expected '" + expectedEvents + "', got '" + actualEvents + "'. " +
+                        GetPrivateField<TextBlock>(window, "messageText").Text);
                 AssertEqual(published ? "candidate" : "previous", File.ReadAllText(active).Trim());
+                AssertTrue(!File.Exists(literalMarker));
             }
             finally
             {
@@ -1886,9 +2000,9 @@ if (Test-Path (Join-Path $PSScriptRoot 'fail-live-apply')) {
             }
         }
 
-        private static string CreateLayout(bool includeManager = true)
+        private static string CreateLayout(bool includeManager = true, string suffix = "")
         {
-            string root = Path.Combine(Path.GetTempPath(), "dream-skin-manager-test-" + Guid.NewGuid().ToString("N"));
+            string root = Path.Combine(Path.GetTempPath(), "dream-skin-manager-test-" + Guid.NewGuid().ToString("N") + suffix);
             Directory.CreateDirectory(Path.Combine(root, "windows", "scripts"));
             File.WriteAllText(Path.Combine(root, "windows", "scripts", "start-dream-skin.ps1"), "# fixture");
             File.WriteAllText(Path.Combine(root, "windows", "scripts", "restore-dream-skin.ps1"), "# fixture");

@@ -412,6 +412,17 @@ namespace CodexDreamSkinManager
             return RunScriptAsync(recoveryScript, args);
         }
 
+        public Task ApplyThemeAndStartAsync(ThemeOption theme, bool restartExisting)
+        {
+            if (!CanRecover) throw new FileNotFoundException("缺少主题启动脚本。", recoveryScript);
+            List<ScriptArgument> args = new List<ScriptArgument>();
+            args.Add(P("-StartOnly"));
+            if (restartExisting) args.Add(P("-RestartExisting"));
+            args.Add(P("-SkillRoot")); args.Add(V(Path.Combine(rootDirectory, "windows")));
+            AddThemeArguments(args, theme);
+            return RunScriptAsync(recoveryScript, args);
+        }
+
         private static void AddThemeArguments(List<ScriptArgument> args, ThemeOption theme)
         {
             if (theme == null) throw new ArgumentNullException("theme");
@@ -513,10 +524,11 @@ namespace CodexDreamSkinManager
             return RunScriptAsync(Path.Combine(scriptsDirectory, "start-dream-skin.ps1"), args);
         }
 
-        public Task CheckStartupAsync()
+        public Task CheckStartupAsync(bool requireFreshSession = false)
         {
-            return RunScriptAsync(Path.Combine(scriptsDirectory, "start-dream-skin.ps1"),
-                new[] { P("-CheckOnly") });
+            List<ScriptArgument> args = new List<ScriptArgument> { P("-CheckOnly") };
+            if (requireFreshSession) args.Add(P("-RequireFreshSession"));
+            return RunScriptAsync(Path.Combine(scriptsDirectory, "start-dream-skin.ps1"), args);
         }
 
         public Task ConnectAsync(bool restartExisting)

@@ -1293,39 +1293,40 @@ namespace CodexDreamSkinManager
                     // A degraded renderer can still have a healthy, reusable
                     // CDP/injector session (for example after an image theme
                     // change), so normal image themes try live apply first.
-                    // Video themes still need the connection preflight because
-                    // the video decoder is validated during startup.
+                    // Video startup validates the decoder and publishes the
+                    // selected theme within the same startup transaction.
                     bool degraded = string.Equals(currentStatus.StatusKind, "degraded", StringComparison.OrdinalIgnoreCase);
                     bool needsStart = !currentStatus.IsRunning || (video && degraded);
-                    // A video connection is temporary: after validation startup
-                    // closes it to install the selected theme's native appearance.
                     bool restartAuthorized = false;
                     if (needsStart || restart)
-                        restartAuthorized = await ConfirmStartupIfRequiredAsync("应用主题", restart || (video && needsStart));
+                        restartAuthorized = await ConfirmStartupIfRequiredAsync("应用主题", restart, video && needsStart);
                     needsStart = needsStart || restartAuthorized;
                     if (needsStart && video)
                     {
-                        SetOperationPhase("正在连接 Codex...", "正在连接 Codex 并验证视频...");
-                        await service.ConnectAsync(restartAuthorized);
+                        SetOperationPhase("正在应用视频皮肤...", "正在连接 Codex、验证视频并应用皮肤，最长等待 5 分钟...");
+                        await service.ApplyThemeAndStartAsync(theme, restartAuthorized);
                     }
-                    // A degraded session must not fail live apply before StartAsync
-                    // gets the chance to reconcile its browser/watcher identity.
-                    SetOperationPhase("正在应用皮肤...", "正在校验并应用主题，最长等待 5 分钟...");
-                    bool rendererApplied = await service.ApplyThemeAsync(theme, needsStart);
-                    // The watcher can also exit between Status and ApplyTheme.
-                    // Persisting a theme alone is not successful application.
-                    if (needsStart || !rendererApplied)
+                    else
                     {
-                        if (!needsStart)
+                        // A degraded session must not fail live apply before StartAsync
+                        // gets the chance to reconcile its browser/watcher identity.
+                        SetOperationPhase("正在应用皮肤...", "正在校验并应用主题，最长等待 5 分钟...");
+                        bool rendererApplied = await service.ApplyThemeAsync(theme, needsStart);
+                        // The watcher can also exit between Status and ApplyTheme.
+                        // Persisting a theme alone is not successful application.
+                        if (needsStart || !rendererApplied)
                         {
-                            try { restartAuthorized = await ConfirmStartupIfRequiredAsync("恢复皮肤连接", false); }
-                            catch (OperationCanceledException)
+                            if (!needsStart)
                             {
-                                throw new OperationCanceledException("主题已保存，已取消恢复连接；尚未确认皮肤显示。请重新应用主题。");
+                                try { restartAuthorized = await ConfirmStartupIfRequiredAsync("恢复皮肤连接", false); }
+                                catch (OperationCanceledException)
+                                {
+                                    throw new OperationCanceledException("主题已保存，已取消恢复连接；尚未确认皮肤显示。请重新应用主题。");
+                                }
                             }
+                            SetOperationPhase("正在连接皮肤服务...", "正在连接皮肤服务并确认显示...");
+                            await service.StartAsync(restartAuthorized);
                         }
-                        SetOperationPhase("正在连接皮肤服务...", "正在连接皮肤服务并确认显示...");
-                        await service.StartAsync(restartAuthorized);
                     }
                 }
                 SetExpectedRuntimeState(true, false);
@@ -1391,12 +1392,12 @@ namespace CodexDreamSkinManager
             }, "皮肤已启用。");
         }
 
-        private async Task<bool> ConfirmStartupIfRequiredAsync(string operation, bool forceRestart)
+        private async Task<bool> ConfirmStartupIfRequiredAsync(string operation, bool forceRestart, bool requireFreshSession = false)
         {
             bool requiresRestart = forceRestart;
             try
             {
-                await service.CheckStartupAsync();
+                await service.CheckStartupAsync(requireFreshSession);
             }
             catch (Exception ex)
             {

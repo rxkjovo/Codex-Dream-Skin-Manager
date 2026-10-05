@@ -1,6 +1,8 @@
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $true)][string]$SkillRoot,
+  [switch]$StartOnly,
+  [switch]$RestartExisting,
   [string]$ThemeDirectory,
   [string]$ImagePath,
   [string]$Name,
@@ -18,6 +20,7 @@ param(
   [ValidateSet('auto','left','right','center','none')][string]$SafeArea = 'auto',
   [ValidateSet('auto','ambient','banner','full','off')][string]$TaskMode = 'auto',
   [ValidateRange(0.0, 1.0)][double]$BubbleOpacity = 0.0,
+  [ValidateRange(0.0, 1.0)][double]$SurfaceOpacity = 0.8,
   [ValidatePattern('^$|^#[0-9A-Fa-f]{6}$')][string]$Accent = ''
 )
 
@@ -32,11 +35,11 @@ $startScript = Join-Path $scripts 'start-dream-skin.ps1'
 
 function Invoke-RecoveryManager {
   param([Parameter(Mandatory = $true)][string[]]$Arguments)
-  $output = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $managerScript @Arguments 2>&1)
-  if ($LASTEXITCODE -ne 0) {
-    throw (($output | ForEach-Object { "$_" }) -join [Environment]::NewLine)
+  $result = Invoke-DreamSkinPowerShellScript -ScriptPath $managerScript -ArgumentList $Arguments
+  if ($result.ExitCode -ne 0) {
+    throw ($result.Output -join [Environment]::NewLine)
   }
-  return ($output | ForEach-Object { "$_" }) -join [Environment]::NewLine
+  return $result.Output -join [Environment]::NewLine
 }
 
 function Start-RecoveryFallbackCodex {
@@ -59,18 +62,6 @@ if (-not $ThemeDirectory -and -not $ImagePath) {
   throw 'Theme recovery requires ThemeDirectory or ImagePath.'
 }
 
-# Validate the selected theme before stopping Codex or changing the active theme.
-if ($ThemeDirectory) {
-  $recoveryTheme = Read-DreamSkinTheme -ThemeDirectory $ThemeDirectory
-  $recoveryMedia = $recoveryTheme.ImagePath
-} else {
-  $recoveryMedia = [System.IO.Path]::GetFullPath($ImagePath)
-  Assert-DreamSkinImageFile -Path $recoveryMedia
-  if (-not $Name -or -not $Name.Trim()) { throw 'Theme name is required.' }
-}
-
-$videoRecovery = [System.IO.Path]::GetExtension($recoveryMedia) -ieq '.mp4'
-
 $operationLock = $null
 $previousRecoveryLockHeld = $env:CODEX_DREAM_SKIN_RECOVERY_LOCK_HELD
 try {
@@ -87,6 +78,31 @@ try {
   if ($kind -eq 'error') {
     throw 'Dream Skin state cannot be inspected safely. Use emergency restore before retrying.'
   }
+  if ($StartOnly -and $kind -in @('mismatch','uninspectable')) {
+    throw 'Dream Skin requires explicit process recovery before selected theme startup.'
+  }
+
+  # Resolve the same selected contract as ApplyTheme while holding its lock,
+  # before stopping Codex or preparing native appearance for the first launch.
+  if ($ThemeDirectory) {
+    $recoveryTheme = Read-DreamSkinTheme -ThemeDirectory $ThemeDirectory
+    $recoveryMedia = $recoveryTheme.ImagePath
+    $requestedAppearance = "$($recoveryTheme.Theme.appearance)"
+  } else {
+    $recoveryMedia = [System.IO.Path]::GetFullPath($ImagePath)
+    Assert-DreamSkinImageFile -Path $recoveryMedia
+    if (-not $Name -or -not $Name.Trim()) { throw 'Theme name is required.' }
+    $requestedAppearance = $Appearance
+    $selectedPreset = @($status.themes | Where-Object {
+      $_.isPreset -eq $true -and $_.imagePath -and
+        (Test-DreamSkinPathEqual -Left "$($_.imagePath)" -Right $recoveryMedia)
+    }) | Select-Object -First 1
+    if ($null -ne $selectedPreset) { $requestedAppearance = "$($selectedPreset.appearance)" }
+  }
+  if ($requestedAppearance -notin @('auto','light','dark')) {
+    throw 'The selected theme has an invalid appearance mode.'
+  }
+  $videoRecovery = [System.IO.Path]::GetExtension($recoveryMedia) -ieq '.mp4'
 
   $paths = Get-DreamSkinThemePaths -StateRoot $StateRoot
   $statePath = $paths.State
@@ -112,8 +128,10 @@ try {
       Write-DreamSkinState -Path $statePath -State $sanitized
     }
 
-    & $restoreScript -ForceRestart -NoRelaunch
-    $restoreCompleted = $true
+    if (-not $StartOnly) {
+      & $restoreScript -ForceRestart -NoRelaunch
+      $restoreCompleted = $true
+    }
 
     if ($kind -eq 'uninspectable' -and $oldInjectorPid -gt 0) {
       try { Wait-Process -Id $oldInjectorPid -Timeout 5 -ErrorAction Stop } catch {}
@@ -122,9 +140,6 @@ try {
         throw 'The uninspectable recorded process did not exit after Codex closed. Recovery stopped without terminating it.'
       }
     }
-
-    # Validate video only after reconnecting, without loading the previous skin.
-    if ($videoRecovery) { & $startScript -RestartExisting -ConnectOnly }
 
     $applyArguments = @('-Action', 'ApplyTheme', '-SkillRoot', $SkillRoot, '-StateRoot', $StateRoot)
     if ($ThemeDirectory) {
@@ -138,7 +153,7 @@ try {
         '-PositionMode', $PositionMode,
         '-FramingEnabled', "$FramingEnabled",
         '-TaskMode', $TaskMode,
-        '-BubbleOpacity', "$BubbleOpacity"
+        '-BubbleOpacity', "$BubbleOpacity", '-SurfaceOpacity', "$SurfaceOpacity"
       )
       if (-not [string]::IsNullOrWhiteSpace($TagsJson)) {
         $applyArguments += @('-TagsJson', $TagsJson)
@@ -147,8 +162,17 @@ try {
         $applyArguments += @('-Accent', $Accent)
       }
     }
-    $null = Invoke-RecoveryManager -Arguments $applyArguments
-    & $startScript -RestartExisting
+    if ($videoRecovery -or $StartOnly) {
+      $startArguments = @{
+        RequestedThemeAppearance = $requestedAppearance
+        ThemeApplyArguments = @($applyArguments + '-DeferLiveApply')
+      }
+      if (-not $StartOnly -or $RestartExisting) { $startArguments.RestartExisting = $true }
+      & $startScript @startArguments
+    } else {
+      $null = Invoke-RecoveryManager -Arguments $applyArguments
+      & $startScript -RestartExisting
+    }
 
     [ordered]@{
       recovered = $true
@@ -161,7 +185,7 @@ try {
         Write-Warning "The original diagnostic state remains archived at $archivePath"
       }
     }
-    Start-RecoveryFallbackCodex
+    if (-not $StartOnly) { Start-RecoveryFallbackCodex }
     throw
   }
 } finally {

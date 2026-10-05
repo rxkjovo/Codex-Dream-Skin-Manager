@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Release tag matching the selected commit (for example v2.0.3)"
+        description: "Release tag matching the selected commit (for example v2.0.4)"
         required: true
-        default: "v2.0.3"
+        default: "v2.0.4"
         type: string
 
 permissions:

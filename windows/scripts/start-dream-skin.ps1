@@ -5,6 +5,9 @@ param(
   [switch]$PromptRestart,
   [switch]$CheckOnly,
   [switch]$ConnectOnly,
+  [switch]$RequireFreshSession,
+  [ValidateSet('auto','light','dark')][string]$RequestedThemeAppearance = 'auto',
+  [string[]]$ThemeApplyArguments = @(),
   [string]$ProfilePath,
   [switch]$ForegroundInjector,
   [ValidateRange(0, 300000)][int]$OperationLockTimeoutMilliseconds = 0,
@@ -70,6 +73,11 @@ $operationLock = $null
 $startFailureCategory = 'internal-start-failure'
 $appearanceTransaction = $null
 $appearanceRecovery = 'not-needed'
+$applyingSelectedTheme = $ThemeApplyArguments.Count -gt 0
+$selectedThemePublished = $false
+if ($applyingSelectedTheme -and ($CheckOnly -or $ConnectOnly -or $ForegroundInjector)) {
+  throw 'Selected theme startup cannot be combined with check-only, connection-only, or foreground mode.'
+}
 try {
   $operationLock = Enter-DreamSkinOperationLock `
     -TimeoutMilliseconds $OperationLockTimeoutMilliseconds
@@ -174,6 +182,9 @@ try {
       $previousState.connectionOnly -is [bool] -and $previousState.connectionOnly) {
     $cdpIdentity = $null
   }
+  # A selected-theme startup prepares native appearance before launching.
+  # Existing sessions need explicit restart consent; a cold start launches once.
+  if ($applyingSelectedTheme -or $RequireFreshSession) { $cdpIdentity = $null }
   $debugReady = $null -ne $cdpIdentity
   $codexProcesses = if (Test-DreamSkinPathEqual -Left $codexToStop.Executable -Right $currentCodex.Executable) {
     $currentProcesses
@@ -231,18 +242,28 @@ try {
           $_.Exception)
       }
     }
-    if ($null -eq (Get-DreamSkinVerifiedCdpIdentity -Port $Port -Codex $codex)) {
+    $startupIdentity = Get-DreamSkinVerifiedCdpIdentity -Port $Port -Codex $codex
+    if ($applyingSelectedTheme -and $null -ne $startupIdentity) {
+      throw 'DREAM_SKIN_RESTART_REQUIRED: A Codex session appeared after startup consent was checked. Retry to confirm its restart before applying the selected theme.'
+    }
+    if ($null -eq $startupIdentity) {
       # Codex is closed on this path; sync the appearanceTheme pin to the
       # active theme before launching (config writes race the app while it runs).
       try {
         if (-not $ConnectOnly) {
           $appearanceTransaction = Install-DreamSkinBaseTheme `
             -ConfigPath $ConfigPath -BackupPath $BackupPath `
-            -AppearanceTheme (Get-DreamSkinActiveThemeAppearance -ThemeDirectory $themePaths.Active) `
+            -AppearanceTheme $(if ($applyingSelectedTheme) { $RequestedThemeAppearance } else {
+              Get-DreamSkinActiveThemeAppearance -ThemeDirectory $themePaths.Active
+            }) `
             -PassThruTransaction
           if ($null -ne $appearanceTransaction) { $appearanceRecovery = 'retained' }
         }
       } catch {
+        if ($applyingSelectedTheme) {
+          $startFailureCategory = 'state-reconciliation-failed'
+          throw
+        }
         $appearanceTransaction = $null
         $appearanceRecovery = 'not-needed'
         Write-Warning "Could not sync Codex appearanceTheme to the active theme: $($_.Exception.Message)"
@@ -493,6 +514,34 @@ try {
   $daemon = $null
   $startFailureCategory = 'injector-start-failed'
   try {
+    if ($applyingSelectedTheme) {
+      # One verified browser session handles decode, publication and injection.
+      # The requested native appearance was prepared before this first launch;
+      # retain its rollback journal until final renderer verification succeeds.
+      $connectionState = [pscustomobject]@{
+        schemaVersion = 3
+        platform = 'windows'
+        connectionOnly = $true
+        port = $Port
+        codexExe = $codex.Executable
+        codexPackageRoot = $codex.PackageRoot
+        codexPackageFullName = $codex.PackageFullName
+        codexPackageFamilyName = $codex.PackageFamilyName
+        codexVersion = $codex.Version
+        browserId = $cdpIdentity.BrowserId
+        profilePath = $ProfilePath
+        createdAt = (Get-Date).ToUniversalTime().ToString('o')
+      }
+      Write-DreamSkinState -Path $StatePath -State $connectionState
+      $startFailureCategory = 'renderer-verification-failed'
+      $applyResult = Invoke-DreamSkinPowerShellScript `
+        -ScriptPath (Join-Path $PSScriptRoot 'manager-actions.ps1') -ArgumentList $ThemeApplyArguments
+      if ($applyResult.ExitCode -ne 0) {
+        throw ($applyResult.Output -join [Environment]::NewLine)
+      }
+      $selectedThemePublished = $true
+      $startFailureCategory = 'injector-start-failed'
+    }
     $injectorArgs = @((ConvertTo-DreamSkinProcessArgument -Value $Injector), '--watch', '--port', "$Port",
       '--browser-id', $cdpIdentity.BrowserId, '--theme-dir',
       (ConvertTo-DreamSkinProcessArgument -Value $themePaths.Active), '--pause-file',
@@ -609,7 +658,8 @@ try {
         Write-Warning "The rollback injector has not exited yet: PID $($daemon.Id). State was preserved so the next start can reconcile it."
       }
     }
-    if ($injectorStopped -and -not $launchedWithCdp -and -not $skinLooksRendered) {
+    if ($injectorStopped -and -not $launchedWithCdp -and -not $skinLooksRendered -and
+        (-not $applyingSelectedTheme -or $selectedThemePublished)) {
       try {
         $rollbackIdentity = Get-DreamSkinVerifiedCdpIdentity -Port $Port -Codex $codex
         if ($null -ne $rollbackIdentity -and $rollbackIdentity.BrowserId -ceq $cdpIdentity.BrowserId) {
@@ -625,7 +675,9 @@ try {
     # Keep the browser identity when rollback deliberately leaves a rendered
     # skin alive. The stopped PID correctly reports stale, while Status can
     # still verify the renderer and the next start can reconcile this session.
-    if ($injectorStopped -and -not $skinLooksRendered) {
+    $retainDecodeConnection = $applyingSelectedTheme -and -not $selectedThemePublished -and
+      -not $launchedWithCdp -and $null -ne $connectionState
+    if ($injectorStopped -and -not $skinLooksRendered -and -not $retainDecodeConnection) {
       Remove-Item -LiteralPath $StatePath -Force -ErrorAction SilentlyContinue
     }
     if ($launchedWithCdp -and -not $skinLooksRendered) {

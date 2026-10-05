@@ -19,6 +19,7 @@ $source = $source.Replace(
   '''mock-skill-root'''
 )
 # The presentation hook must stay outside these process/config fixtures.
+$source = $source.Replace('(Join-Path $PSScriptRoot ''manager-actions.ps1'')', '''mock-manager-actions.ps1''')
 $source = $source.Replace(
   '$animationScript = Join-Path $PSScriptRoot ''play-startup-animation.mjs''',
   '$animationScript = Join-Path $StateRoot (''fixture-animation-disabled-'' + [guid]::NewGuid().ToString(''N'') + ''.mjs'')'

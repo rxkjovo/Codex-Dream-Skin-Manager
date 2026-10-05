@@ -53,7 +53,15 @@ namespace CodexDreamSkinManager
 
         public static string QuoteLiteral(string value)
         {
-            return "'" + (value ?? "").Replace("'", "''") + "'";
+            value = value ?? "";
+            // PowerShell treats Unicode smart apostrophes as string delimiters.
+            // Decode them as data so neither paths nor argument values are parsed.
+            if (value.IndexOfAny(new[] { '\u2018', '\u2019', '\u201A', '\u201B' }) >= 0)
+            {
+                string encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
+                return "([System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + encoded + "')))";
+            }
+            return "'" + value.Replace("'", "''") + "'";
         }
 
         public static Task<ScriptResult> RunAsync(string scriptPath, IList<ScriptArgument> arguments)
