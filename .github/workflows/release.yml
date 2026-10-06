@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Release tag matching the selected commit (for example v2.0.6)"
+        description: "Release tag matching the selected commit (for example v2.0.7)"
         required: true
-        default: "v2.0.6"
+        default: "v2.0.7"
         type: string
 
 permissions:
@@ -263,3 +263,4 @@ jobs:
               --notes-file "$notes" \
               --repo "$GITHUB_REPOSITORY"
           fi
+

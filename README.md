@@ -4,14 +4,14 @@
 
 ## 下载与安装
 
-当前版本：`2.0.6`。前往 [GitHub Releases](https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases) 下载对应安装包：
+当前版本：`2.0.7`。前往 [GitHub Releases](https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases) 下载对应安装包：
 
 | 平台 | 系统要求 | 安装包 |
 | --- | --- | --- |
-| Windows 安装版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.6-windows-x64-setup.exe` |
-| Windows 便携版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.6-windows-x64-portable.zip` |
-| macOS Intel | macOS 13+ | `CodexDreamSkinManager-v2.0.6-macos-x64.dmg` |
-| macOS Apple Silicon | macOS 13+ | `CodexDreamSkinManager-v2.0.6-macos-arm64.dmg` |
+| Windows 安装版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.7-windows-x64-setup.exe` |
+| Windows 便携版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.7-windows-x64-portable.zip` |
+| macOS Intel | macOS 13+ | `CodexDreamSkinManager-v2.0.7-macos-x64.dmg` |
+| macOS Apple Silicon | macOS 13+ | `CodexDreamSkinManager-v2.0.7-macos-arm64.dmg` |
 
 请先安装 Codex 桌面客户端。发布包已内置 Node.js，无需单独配置运行环境；Windows 便携版须完整解压，不能只复制 EXE。`SHA256SUMS.txt` 提供下载包校验值。
 
@@ -63,3 +63,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -SkillRoot ".\wi
 基于 [Fei-Away/Codex-Dream-Skin](https://github.com/Fei-Away/Codex-Dream-Skin) 的换肤运行时开发，感谢上游作者及贡献者。可视化操作界面由群友“花落情已逝”基于上游项目开发。
 
 本项目采用 [MIT License](LICENSE)，再分发须保留版权和许可证声明。第三方组件及素材说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+

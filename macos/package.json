@@ -1,6 +1,6 @@
 {
   "name": "codex-dream-skin-studio",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,3 +11,4 @@
     "node": ">=20"
   }
 }
+

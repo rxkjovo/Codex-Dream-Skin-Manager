@@ -5,6 +5,7 @@ param(
   [switch]$PromptRestart,
   [switch]$CheckOnly,
   [switch]$ConnectOnly,
+  [switch]$ReconnectOnly,
   [switch]$RequireFreshSession,
   [ValidateSet('auto','light','dark')][string]$RequestedThemeAppearance = 'auto',
   [string[]]$ThemeApplyArguments = @(),
@@ -75,7 +76,7 @@ $appearanceTransaction = $null
 $appearanceRecovery = 'not-needed'
 $applyingSelectedTheme = $ThemeApplyArguments.Count -gt 0
 $selectedThemePublished = $false
-if ($applyingSelectedTheme -and ($CheckOnly -or $ConnectOnly -or $ForegroundInjector)) {
+if ($applyingSelectedTheme -and ($CheckOnly -or $ConnectOnly -or $ReconnectOnly -or $ForegroundInjector)) {
   throw 'Selected theme startup cannot be combined with check-only, connection-only, or foreground mode.'
 }
 try {
@@ -247,10 +248,13 @@ try {
       throw 'DREAM_SKIN_RESTART_REQUIRED: A Codex session appeared after startup consent was checked. Retry to confirm its restart before applying the selected theme.'
     }
     if ($null -eq $startupIdentity) {
+      if ($ReconnectOnly) {
+        throw 'DREAM_SKIN_RECONNECT_REQUIRED: Codex does not expose a verified Dream Skin CDP endpoint; automatic recovery will not launch Codex.'
+      }
       # Codex is closed on this path; sync the appearanceTheme pin to the
       # active theme before launching (config writes race the app while it runs).
       try {
-        if (-not $ConnectOnly) {
+        if (-not $ConnectOnly -and -not $ReconnectOnly) {
           $appearanceTransaction = Install-DreamSkinBaseTheme `
             -ConfigPath $ConfigPath -BackupPath $BackupPath `
             -AppearanceTheme $(if ($applyingSelectedTheme) { $RequestedThemeAppearance } else {
@@ -350,7 +354,7 @@ try {
     }
     # Keep a paused, already-running watcher paused until all state checks and
     # restart consent have succeeded. A cancelled prompt stays side-effect free.
-    if (-not $ConnectOnly) {
+    if (-not $ConnectOnly -and -not $ReconnectOnly) {
       Set-DreamSkinPaused -Paused $false -StateRoot $StateRoot | Out-Null
       $pauseCleared = $true
     }

@@ -45,7 +45,7 @@ const stableTestidLiteral = (testid) => {
   }
   return JSON.stringify(`[data-testid="${testid}"]`);
 };
-const SKIN_VERSION = "2.0.6";
+const SKIN_VERSION = "2.0.7";
 // .github/workflows/ci.yml's version-consistency check greps this file for a
 // literal `const SKIN_VERSION = "...";` line, so the export stays a separate
 // statement rather than an inline `export const`.
@@ -2542,3 +2542,4 @@ if (path.resolve(process.argv[1] || "") === path.resolve(scriptPath)) {
     process.exitCode = 1;
   }
 }
+

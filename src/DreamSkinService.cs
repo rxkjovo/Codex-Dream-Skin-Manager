@@ -524,6 +524,12 @@ namespace CodexDreamSkinManager
             return RunScriptAsync(Path.Combine(scriptsDirectory, "start-dream-skin.ps1"), args);
         }
 
+        public Task ReconnectOnlyAsync()
+        {
+            return RunScriptAsync(Path.Combine(scriptsDirectory, "start-dream-skin.ps1"),
+                new[] { P("-ReconnectOnly") });
+        }
+
         public Task CheckStartupAsync(bool requireFreshSession = false)
         {
             List<ScriptArgument> args = new List<ScriptArgument> { P("-CheckOnly") };

@@ -982,6 +982,14 @@ namespace CodexDreamSkinManager
             if (kind != "stale" && kind != "mismatch" && kind != "uninspectable") return;
             if (currentStatus == null || string.IsNullOrWhiteSpace(currentStatus.ActiveThemeId) ||
                 string.IsNullOrWhiteSpace(currentStatus.ActiveThemeImage)) return;
+            // A paused skin is an explicit user choice. Startup reconciliation
+            // must not clear its pause marker or silently resume the watcher.
+            if (currentStatus.IsPaused)
+            {
+                startupStatusRecoveryAttempted = true;
+                return;
+            }
+            if (operationRunning) return;
 
             ThemeOption activeTheme = null;
             foreach (ThemeOption candidate in allThemes)
@@ -1013,6 +1021,10 @@ namespace CodexDreamSkinManager
             }
 
             startupStatusRecoveryAttempted = true;
+            operationRunning = true;
+            operationStatusLabel = "正在重新连接当前皮肤...";
+            UpdateStatusDisplay(currentStatus);
+            UpdateActionState();
             try
             {
                 SetMessage("正在尝试重新连接当前皮肤...", false);
@@ -1024,10 +1036,9 @@ namespace CodexDreamSkinManager
                     return;
                 }
                 // Reconcile the watcher once even when the one-shot live apply
-                // succeeded: an updated engine can leave the old watcher stale
-                // while the old CSS remains visible. This path never passes
-                // -RestartExisting, so a running Codex is never force-closed.
-                await service.StartAsync(false);
+                // succeeded. ReconnectOnly refuses to launch Codex if its CDP
+                // endpoint disappeared during this best-effort startup repair.
+                await service.ReconnectOnlyAsync();
                 await RefreshStatusAsync(false, false);
                 if (currentStatus.StatusKind == "stale" || currentStatus.StatusKind == "mismatch" ||
                     currentStatus.StatusKind == "uninspectable")
@@ -1040,6 +1051,13 @@ namespace CodexDreamSkinManager
                 // Startup repair is best effort. Keep the diagnostic status and
                 // leave explicit recovery available to the user.
                 SetMessage("状态需要恢复：" + ex.Message, true);
+                UpdateStatusDisplay(currentStatus);
+                UpdateActionState();
+            }
+            finally
+            {
+                operationRunning = false;
+                operationStatusLabel = "";
                 UpdateStatusDisplay(currentStatus);
                 UpdateActionState();
             }
