@@ -308,7 +308,7 @@
   let savedImages={},pendingImages={},busy=false;
   const settings=$('#settings-dialog'),status=$('#settings-status');
   const textFields=[
-    {key:'introTitle',input:'#intro-title',target:'.boot-title',fallback:'飞行雪绒',limit:16},
+    {key:'introTitle',input:'#intro-title',target:'.boot-title',fallback:'By：若惜',limit:16},
     {key:'introCaption',input:'#intro-caption',target:'.boot-caption',fallback:'CODEX INITIALIZE / TYPE-0',limit:48},
     {key:'artworkSubtitle',input:'#artwork-subtitle',target:'#subtitle',fallback:'幽灵来到…你身边～',limit:60}
   ];
