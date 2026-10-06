@@ -1306,13 +1306,7 @@ switch ($Action) {
       # actually see.  Windows may hide the packaged Node command line even
       # while the recorded browser session is healthy; do not show a red
       # recovery state when the active theme is verified in Codex.
-      # The watcher identity can legitimately be stale immediately after the
-      # manager itself is updated: the old watcher may still be alive while a
-      # one-shot live apply from the current runtime has already refreshed the
-      # renderer.  The renderer probe is the source of truth for what the user
-      # can see, so accept a verified applied renderer even when the recorded
-      # watcher fingerprint is from the previous manager version.
-      if ($rendererAppliedVerified) {
+      if ($rendererAppliedVerified -and $identity.Kind -notin @('stale','mismatch')) {
         $statusKind = 'running'
         $statusMessage = $rendererMessage
       }
@@ -1337,7 +1331,8 @@ switch ($Action) {
     $stateSchema = 0
     if ($state -and $state.schemaVersion) { [void][int]::TryParse("$($state.schemaVersion)", [ref]$stateSchema) }
     [ordered]@{
-      isRunning = [bool]($identity.Running -or $rendererAppliedVerified)
+      isRunning = [bool]($identity.Running -or
+        ($rendererAppliedVerified -and $identity.Kind -notin @('stale','mismatch')))
       isPaused = [bool]$paused
       statusKind = $statusKind
       statusMessage = $statusMessage
