@@ -717,6 +717,16 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_SHELL_MAIN__ > __DREAM_SELECTOR_
   backdrop-filter: none !important;
 }
 
+/* 26.1029 adds a separate top fade below the native header. Clear only its
+   aria-hidden direct decoration; keep content, menus and header geometry. */
+html[data-dream-skin="active"] __DREAM_SELECTOR_SHELL_MAIN__
+  [data-app-shell-main-content-top-fade] >
+  [aria-hidden="true"][class*="MainContentTopFade-"]:not([role]) {
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
 /* Decorative chrome lives on the native shell; no injected positioning host is needed. */
 html[data-dream-skin="active"]
   __DREAM_SELECTOR_SHELL_MAIN__:not(:has(__DREAM_SELECTOR_HOME_ROUTE_CSS__)) > __DREAM_SELECTOR_HEADER_TINT__::before {

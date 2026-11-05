@@ -717,6 +717,16 @@ html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surfa
   backdrop-filter: none !important;
 }
 
+/* 26.1029 adds a separate top fade below the native header. Clear only its
+   aria-hidden direct decoration; keep content, menus and header geometry. */
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+  [data-app-shell-main-content-top-fade] >
+  [aria-hidden="true"][class*="MainContentTopFade-"]:not([role]) {
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
 /* Decorative chrome lives on the native shell; no injected positioning host is needed. */
 html[data-dream-skin="active"]
   main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"])::before {

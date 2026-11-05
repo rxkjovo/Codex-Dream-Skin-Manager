@@ -5,7 +5,7 @@ using System.Reflection;
 [assembly: AssemblyCompany("梦幻皮肤管理器开发团队")]
 [assembly: AssemblyProduct("Codex 梦幻皮肤管理器")]
 [assembly: AssemblyCopyright("版权所有 2026")]
-[assembly: AssemblyVersion("2.0.11.0")]
-[assembly: AssemblyFileVersion("2.0.11.0")]
-[assembly: AssemblyInformationalVersion("2.0.11")]
+[assembly: AssemblyVersion("2.0.12.0")]
+[assembly: AssemblyFileVersion("2.0.12.0")]
+[assembly: AssemblyInformationalVersion("2.0.12")]
 

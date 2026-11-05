@@ -4,18 +4,18 @@
 
 ## 下载与安装
 
-当前版本：`2.0.11`。前往 [GitHub Releases](https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases) 下载对应安装包：
+当前版本：`2.0.12`。前往 [GitHub Releases](https://github.com/rxkjovo/Codex-Dream-Skin-Manager/releases) 下载对应安装包：
 
 | 平台 | 系统要求 | 安装包 |
 | --- | --- | --- |
-| Windows 安装版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.11-windows-x64-setup.exe` |
-| Windows 便携版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.11-windows-x64-portable.zip` |
-| macOS Intel | macOS 13+ | `CodexDreamSkinManager-v2.0.11-macos-x64.dmg` |
-| macOS Apple Silicon | macOS 13+ | `CodexDreamSkinManager-v2.0.11-macos-arm64.dmg` |
+| Windows 安装版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.12-windows-x64-setup.exe` |
+| Windows 便携版 | Windows 10/11 x64 | `CodexDreamSkinManager-v2.0.12-windows-x64-portable.zip` |
+| macOS Intel | macOS 13+ | `CodexDreamSkinManager-v2.0.12-macos-x64.dmg` |
+| macOS Apple Silicon | macOS 13+ | `CodexDreamSkinManager-v2.0.12-macos-arm64.dmg` |
 
 请先安装 Codex 桌面客户端。发布包已内置 Node.js，无需单独配置运行环境；Windows 便携版须完整解压，不能只复制 EXE。`SHA256SUMS.txt` 提供下载包校验值。
 
-`2.0.11` 修复新版 Codex 输入框外整条底部区域误加磨砂的问题，让输入框两侧的壁纸保持清晰，同时保留输入框本身的磨砂和旧版布局兼容。
+`2.0.12` 适配 Codex 26.1029 新增的顶部装饰渐变，修复标题栏下方出现黑色横条的问题，保留输入框磨砂及菜单、弹窗外观。
 
 ## 主要功能
 
