@@ -1481,6 +1481,26 @@ html[data-dream-skin="active"] __DREAM_SELECTOR_SHELL_MAIN__
   backdrop-filter: none !important;
 }
 
+/* 26.1111 paints the footer fade and opaque bottom fill on the outer
+   wrapper's pseudo-elements. Identify that wrapper by its direct semantic
+   footer child, not its changing CSS Module name. Clear only those paints;
+   keep the wrapper, footer spacing and actual composer surface intact. */
+html[data-dream-skin="active"] [data-ds-part="main"]
+  __DREAM_SELECTOR_THREAD_SURFACE__ >
+  [class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"][class~="bottom-0"]:has(> [data-thread-scroll-footer]):not(
+    [role], [role="dialog"] *, [role="menu"] *, [role="tooltip"] *
+  )::before,
+html[data-dream-skin="active"] [data-ds-part="main"]
+  __DREAM_SELECTOR_THREAD_SURFACE__ >
+  [class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"][class~="bottom-0"]:has(> [data-thread-scroll-footer]):not(
+    [role], [role="dialog"] *, [role="menu"] *, [role="tooltip"] *
+  )::after {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
 /* Native wide blocks escape the prose column with negative inline margins.
    Keep tables inside the themed message and delegate width overflow to the
    existing horizontal scroller. */
