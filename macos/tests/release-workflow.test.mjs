@@ -86,7 +86,9 @@ assert.match(
 assert.match(macosRuntimeJob, /^\s+run: NODE="\$\(command -v node\)" npm test$/m);
 
 assert.match(workflow, /^  macos:$/m, "The release workflow must build a macOS package.");
-assert.match(workflow, /runner: macos-14/, "ARM64 uses a native runner.");
+assert.match(workflow, /runner: macos-latest/, "ARM64 uses a supported native runner.");
+assert.match(workflow, /test "\$\(uname -m\)" = "\$RELEASE_TARGET"/,
+  "The native runner architecture must match the package target.");
 assert.match(workflow, /runner: macos-15-intel/, "Intel uses a native runner.");
 assert.match(workflow, /DREAMSKIN_ARCHS: \$\{\{ matrix.target \}\}/);
 assert.match(workflow, /NODE="\$\(command -v node\)" bash macos\/scripts\/build-dmg\.sh/);

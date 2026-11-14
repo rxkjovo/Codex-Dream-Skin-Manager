@@ -163,7 +163,7 @@ jobs:
         include:
           - arch: arm64
             target: arm64
-            runner: macos-14
+            runner: macos-latest
           - arch: x64
             target: x86_64
             runner: macos-15-intel
@@ -183,6 +183,13 @@ jobs:
 
       - name: Check synchronized cross-platform runtime assets
         run: node tools/sync-runtime-assets.mjs --check
+
+      - name: Verify native macOS runner architecture
+        env:
+          RELEASE_TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "$RELEASE_TARGET"
 
       - name: Test and build macOS DMG
         env:
