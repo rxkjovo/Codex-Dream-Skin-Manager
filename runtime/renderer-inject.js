@@ -851,8 +851,19 @@
 
   const selectorHit = (key) => {
     const selector = selectorByKey.get(key)?.selector;
-    if (!selector) return false;
-    try { return Boolean(document.querySelector(selector)); } catch { return false; }
+    if (selector) {
+      try {
+        if (document.querySelector(selector)) return true;
+      } catch {}
+    }
+    // Codex 26.1117 moved the shell/header CSS-module wrappers while keeping
+    // stable app-shell attributes on some builds. Treat the same semantic
+    // fallback used for part binding as an L1 hit so verification does not
+    // reject an otherwise usable renderer.
+    if (key === "shell-main") return Boolean(resolvedMainNode?.());
+    if (key === "left-panel") return Boolean(fallbackSidebarNodes?.().length);
+    if (key === "header-tint") return Boolean(fallbackHeaderNodes?.().length);
+    return false;
   };
 
   const stableTestidHit = (testid) => {
@@ -886,6 +897,12 @@
   };
   const fallbackMainNodes = () => selectorNodes("shell-main").length
     ? [] : [resolvedMainNode()].filter(Boolean);
+  const fallbackHeaderNodes = () => selectorNodes("header-tint").length
+    ? [] : genericNodes(
+      '[data-app-shell-header-edge-scroll], [data-app-shell-titlebar], ' +
+      '[data-app-shell-application-menu-bar], [class*="ApplicationMenuPageHeader-"], ' +
+      '[class*="PageHeader-"]',
+    ).filter((node) => !node.closest?.('[role="dialog"], [aria-modal="true"]'));
   const fallbackSidebarNodes = () => {
     if (selectorNodes("left-panel").length) return [];
     const main = resolvedMainNode();
@@ -1059,7 +1076,7 @@
     const desired = new Map();
     addPart(desired, "root", [document.documentElement]);
     addPart(desired, "sidebar", [...selectorNodes("left-panel"), ...fallbackSidebarNodes()]);
-    addPart(desired, "header", selectorNodes("header-tint"));
+    addPart(desired, "header", [...selectorNodes("header-tint"), ...fallbackHeaderNodes()]);
     // Route-specific parts win when a generic shell collapses home and main
     // onto the same element.
     addPart(desired, "home", selectorNodes("home-route"));

@@ -187,8 +187,8 @@ function makeFixture({
     partFixtures.composer = makeDomNode("composer", partFixtures.main);
     partFixtures.composerToolbar = makeDomNode("composer-toolbar", partFixtures.composer);
     register("aside.app-shell-left-panel", partFixtures.sidebar);
-    register("main:is(.main-surface, [data-app-shell-main-surface], [class*=\"_MainContentSurface_\"])", partFixtures.main);
-    register("header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*=\"_Header_\"])", partFixtures.header);
+    register("main:is(.main-surface, [data-app-shell-main-surface], [class*=\"_MainContentSurface_\"], [class*=\"MainContentSurface-\"])", partFixtures.main);
+    register(":is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*=\"_Header_\"], [class*=\"ApplicationMenuPageHeader-\"], [class*=\"PageHeader-\"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*=\"ApplicationMenuPageHeader-\"], [class*=\"PageHeader-\"])", partFixtures.header);
     register('[data-testid="home-icon"]', partFixtures.homeIcon);
     register('[data-feature="game-source"]', partFixtures.homeHero);
     register('[role="main"]:has([data-testid="home-icon"])', partFixtures.home);
@@ -466,9 +466,9 @@ export async function runRendererRuntimeTest(assetRoot) {
   // Home gating must stay single-level: CSS forbids :has() inside :has(),
   // and Chromium drops any rule that nests it (the v1.3.1 regression).  The
   // canonical CSS therefore gates on the :has()-free home-route-css alias.
-  assert.match(css, /main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\]\):has\(\[role="main"\]\)/);
-  assert.match(css, /main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\]\):not\(:has\(\[role="main"\]\)\)/);
-  assert.match(css, /header:is\(\.app-header-tint, \[data-app-shell-header-edge-scroll\], \[class\*=\"_Header_\"\]\)/);
+  assert.match(css, /main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\], \[class\*=\"MainContentSurface-\"\]\):has\(\[role="main"\]\)/);
+  assert.match(css, /main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\], \[class\*=\"MainContentSurface-\"\]\):not\(:has\(\[role="main"\]\)\)/);
+  assert.match(css, /header:is\(\.app-header-tint, \[data-app-shell-header-edge-scroll\], \[data-app-shell-titlebar\], \[data-app-shell-application-menu-bar\], \[class\*=\"_Header_\"\], \[class\*=\"ApplicationMenuPageHeader-\"\], \[class\*=\"PageHeader-\"\]\)/);
   assert.match(css, /:is\(\.app-shell-main-content-top-fade, \[class\*=\"_MainContentTopFade_\"\], \[data-app-shell-main-content-top-fade\]:empty\)/);
   assert.doesNotMatch(
     css,
@@ -483,7 +483,7 @@ export async function runRendererRuntimeTest(assetRoot) {
   );
   assert.match(
     css,
-    /(?:__DREAM_SELECTOR_SHELL_MAIN__|main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*="_MainContentSurface_"\]\)) > (?:__DREAM_SELECTOR_HEADER_TINT__|header:is\(\.app-header-tint, \[data-app-shell-header-edge-scroll\], \[class\*="_Header_"\]\))\s*\{[^}]*background:\s*transparent\s*!important;[^}]*backdrop-filter:\s*none\s*!important;/,
+    /(?:__DREAM_SELECTOR_SHELL_MAIN__|main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*="_MainContentSurface_"\], \[class\*="MainContentSurface-"\]\)) > (?:__DREAM_SELECTOR_HEADER_TINT__|:is\(header:is\(\.app-header-tint, \[data-app-shell-header-edge-scroll\], \[data-app-shell-titlebar\], \[data-app-shell-application-menu-bar\], \[class\*="_Header_"\], \[class\*="ApplicationMenuPageHeader-"\], \[class\*="PageHeader-"\]\), \[data-app-shell-header-edge-scroll\], \[data-app-shell-titlebar\], \[data-app-shell-application-menu-bar\], \[class\*="ApplicationMenuPageHeader-"\], \[class\*="PageHeader-"\]\))\s*\{[^}]*background:\s*transparent\s*!important;[^}]*backdrop-filter:\s*none\s*!important;/,
     "The task-page header must not add an opaque layer over the artwork.",
   );
   assert.match(
@@ -556,22 +556,22 @@ export async function runRendererRuntimeTest(assetRoot) {
   );
   assert.match(
     css,
-    /(?:__DREAM_SELECTOR_SHELL_MAIN__|main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*="_MainContentSurface_"\]\))[\s\S]{0,180}\[data-vscode-context\]\[tabindex="0"\]:focus-visible[\s\S]{0,120}outline:\s*none\s*!important;/,
+    /(?:__DREAM_SELECTOR_SHELL_MAIN__|main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*="_MainContentSurface_"\], \[class\*="MainContentSurface-"\]\))[\s\S]{0,180}\[data-vscode-context\]\[tabindex="0"\]:focus-visible[\s\S]{0,120}outline:\s*none\s*!important;/,
     "The non-interactive Codex route wrapper must not draw a window-sized focus outline.",
   );
   assert.match(
     css,
-    /:not\(:has\(main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\]\)\)\)[\s\S]{0,120}\[data-ds-part="sidebar"\]/,
+    /:not\(:has\(main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\], \[class\*=\"MainContentSurface-\"\]\), \[data-ds-part="main"\]\)\)[\s\S]{0,120}\[data-ds-part="sidebar"\]/,
     "Core CSS must style the validated generic sidebar when the exact shell selector is absent.",
   );
   assert.match(
     css,
-    /:not\(:has\(main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\]\)\)\)[\s\S]{0,180}\[data-ds-part="main"\]/,
+    /:not\(:has\(main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\], \[class\*=\"MainContentSurface-\"\]\), \[data-ds-part="main"\]\)\)[\s\S]{0,180}\[data-ds-part="main"\]/,
     "Core CSS must paint a validated generic main surface.",
   );
   assert.match(
     css,
-    /:not\(:has\(main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\]\)\)\)[\s\S]{0,120}\[data-ds-part="composer"\]/,
+    /:not\(:has\(main:is\(\.main-surface, \[data-app-shell-main-surface\], \[class\*=\"_MainContentSurface_\"\], \[class\*=\"MainContentSurface-\"\]\), \[data-ds-part="main"\]\)\)[\s\S]{0,120}\[data-ds-part="composer"\]/,
     "Core CSS must style the validated generic composer.",
   );
   // Every home/project selector must stay behind the root skin gate.  A

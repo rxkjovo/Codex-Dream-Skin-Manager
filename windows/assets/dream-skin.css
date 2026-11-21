@@ -158,6 +158,17 @@ html[data-dream-skin="active"] {
     background: transparent !important;
   }
 
+  /* Codex 26.1117 can render the titlebar wrapper as a non-header element.
+     The renderer marks the semantic app-shell header after its fallback
+     probe; keep that chrome transparent without touching its geometry. */
+  html[data-dream-skin="active"] [data-ds-part="header"] {
+    background: transparent !important;
+    background-image: none !important;
+    border-bottom: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
   /* 26.924 summary section titles are sticky headers with an opaque ::before
      strip. The enclosing summary panel already paints the configured glass;
      do not stack another surface/blur on its titles or their top padding. */
@@ -471,7 +482,7 @@ html[data-dream-skin="active"] aside.app-shell-left-panel [aria-current="page"] 
   color: var(--ds-accent) !important;
 }
 
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) {
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) {
   position: relative !important;
   isolation: isolate;
   overflow: hidden !important;
@@ -483,7 +494,7 @@ html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surfa
   box-shadow: -8px 0 28px rgb(var(--ds-bg-rgb) / .18) !important;
 }
 
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))::before {
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -496,12 +507,12 @@ html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surfa
   opacity: .78;
 }
 
-html[data-dream-skin="active"][data-dream-shell="light"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))::before {
+html[data-dream-skin="active"][data-dream-shell="light"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))::before {
   opacity: .72;
 }
 
 html[data-dream-skin="active"]:is([data-dream-art-wide="true"], [data-dream-art-aspect="wide"], [data-dream-art-aspect="ultrawide"])
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))::before {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))::before {
   background-position: center, center, var(--ds-art-position);
   background-size: 100% 100%, 100% 100%, cover;
 }
@@ -510,7 +521,7 @@ html[data-dream-skin="active"]:is([data-dream-art-wide="true"], [data-dream-art-
    baseline readability veil. Ambient mode deliberately uses the heavier task
    fade/shade below, while off removes the artwork entirely. */
 html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art-task-mode="full"])
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))::before {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))::before {
   inset: 0;
   height: auto;
   background-image: var(--ds-task-full-veil), var(--dream-skin-art);
@@ -520,12 +531,12 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art
 }
 
 html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))::before {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))::before {
   inset: 0;
   height: auto;
 }
 
-html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"])) body {
+html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"])) body {
   background-image: var(--dream-skin-art) !important;
   background-position: var(--ds-art-position) !important;
   background-size: cover !important;
@@ -533,7 +544,7 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-
   background-attachment: fixed !important;
 }
 
-html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art-task-mode="full"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"])) body {
+html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art-task-mode="full"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"])) body {
   background-image: var(--dream-skin-art) !important;
   background-position: var(--ds-art-position) !important;
   background-size: cover !important;
@@ -541,7 +552,7 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art
   background-attachment: fixed !important;
 }
 
-html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art-task-mode="full"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"]))
+html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art-task-mode="full"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"]))
   aside.app-shell-left-panel {
   background: linear-gradient(90deg,
     var(--ds-immersive-sidebar),
@@ -552,13 +563,13 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art
   backdrop-filter: none !important;
 }
 
-html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art-task-mode="full"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"]))
+html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art-task-mode="full"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"]))
   aside.app-shell-left-panel::after {
   background: transparent !important;
 }
 
-html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art-task-mode="full"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"]))
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) {
+html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art-task-mode="full"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"]))
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) {
   background: linear-gradient(90deg,
     var(--ds-immersive-edge),
     var(--ds-immersive-mid) 64%,
@@ -569,11 +580,11 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art
 }
 
 html[data-dream-skin="active"]:is([data-dream-task-mode="full"], [data-dream-art-task-mode="full"])[data-dream-art-wide="true"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))::before {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))::before {
   content: none;
 }
 
-html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"]))
+html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"]))
   aside.app-shell-left-panel {
   background: linear-gradient(90deg,
     var(--ds-task-immersive-sidebar),
@@ -586,13 +597,13 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-
 
 /* Native sidebar resize chrome inherits the sidebar background and extends
    20px into the main surface. Keeping it clear preserves one continuous image. */
-html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"]))
+html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"]))
   aside.app-shell-left-panel::after {
   background: transparent !important;
 }
 
-html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"]))
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) {
+html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"]))
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) {
   background: linear-gradient(90deg,
     var(--ds-task-immersive-edge),
     var(--ds-task-immersive-mid) 64%,
@@ -603,11 +614,11 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-
 }
 
 html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))::before {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))::before {
   content: none;
 }
 
-html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"]))
+html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"]))
   :is(.composer-surface-chrome, [class*="_ComposerLayoutRoot_"], [data-composer-surface-variant][data-composer-radius-variant]) {
   background: var(--ds-immersive-composer-solid) !important;
   border: 0 !important;
@@ -618,8 +629,8 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-
   backdrop-filter: none !important;
 }
 
-html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"]))
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"]) {
+html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])[data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"]))
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) > :is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="_Header_"], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]) {
   background: transparent !important;
   border-bottom: 0 !important;
   box-shadow: none !important;
@@ -627,7 +638,7 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-
 }
 
 html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"], [data-dream-task-mode="full"], [data-dream-art-task-mode="full"])[data-dream-art-wide="true"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) [class*="_markdown"] {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) [class*="_markdown"] {
   color: var(--ds-text) !important;
   text-shadow:
     0 1px 2px rgb(var(--ds-bg-rgb) / .82),
@@ -635,14 +646,14 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-
 }
 
 html[data-dream-skin="active"][data-dream-shell="light"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"], [data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"], [data-dream-task-mode="full"], [data-dream-art-task-mode="full"])[data-dream-art-wide="true"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) [class*="_markdown"] {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) [class*="_markdown"] {
   text-shadow:
     0 1px 2px rgb(var(--ds-panel-rgb) / .92),
     0 0 10px rgb(var(--ds-panel-rgb) / .72);
 }
 
 html[data-dream-skin="active"]:is([data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"])
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))::before {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))::before {
   inset: 0 0 auto;
   height: clamp(280px, 46vh, 520px);
   background-position: center top, center top, var(--ds-art-position);
@@ -650,7 +661,7 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="banner"], [data-dream-a
 }
 
 html[data-dream-skin="active"]:is([data-dream-task-mode="banner"], [data-dream-art-task-mode="banner"]):is([data-dream-art-wide="true"], [data-dream-art-aspect="wide"], [data-dream-art-aspect="ultrawide"])
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))::before {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))::before {
   inset: 0;
   height: auto;
   background-position: center, center, var(--ds-art-position);
@@ -658,16 +669,16 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="banner"], [data-dream-a
 }
 
 html[data-dream-skin="active"]:is([data-dream-task-mode="off"], [data-dream-art-task-mode="off"])
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))::before {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))::before {
   content: none;
 }
 
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) > :not(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"])) {
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) > :not(:is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="_Header_"], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"])) {
   position: relative;
   z-index: 1;
 }
 
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) [role="main"] {
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) [role="main"] {
   background: transparent !important;
   color: var(--ds-text) !important;
   text-shadow:
@@ -675,7 +686,7 @@ html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surfa
     0 0 10px rgb(var(--ds-bg-rgb) / .46);
 }
 
-html[data-dream-skin="active"][data-dream-shell="light"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) [role="main"] {
+html[data-dream-skin="active"][data-dream-shell="light"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) [role="main"] {
   text-shadow: none;
 }
 
@@ -684,7 +695,7 @@ html[data-dream-skin="active"][data-dream-shell="light"] main:is(.main-surface, 
    settings surface alone cannot reveal an image that is no longer painted.
    Include legacy appearance anchors, leave video on its existing layer, and
    reuse the shared framing variables rather than inventing settings offsets. */
-html[data-dream-skin="active"]:not([data-dream-media="video"]):not([data-dream-task-mode="off"]):not([data-dream-art-task-mode="off"]):has([data-settings-panel-slug], input[name="appearance-theme"], [data-testid="theme-preview"]):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]), [data-ds-part="main"], [data-ds-part="home"])) body {
+html[data-dream-skin="active"]:not([data-dream-media="video"]):not([data-dream-task-mode="off"]):not([data-dream-art-task-mode="off"]):has([data-settings-panel-slug], input[name="appearance-theme"], [data-testid="theme-preview"]):not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"], [data-ds-part="home"])) body {
   background-image: var(--ds-task-full-veil), var(--dream-skin-art) !important;
   background-position: center, var(--ds-art-position) !important;
   background-size: 100% 100%, var(--dream-art-background-size, cover) !important;
@@ -692,24 +703,24 @@ html[data-dream-skin="active"]:not([data-dream-media="video"]):not([data-dream-t
   background-attachment: fixed !important;
 }
 
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) article {
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) article {
   border: 1px solid rgb(var(--ds-muted-rgb) / .12);
   background: rgb(var(--ds-panel-rgb) / .44);
   box-shadow: 0 8px 24px rgb(var(--ds-bg-rgb) / .10);
   backdrop-filter: blur(7px) saturate(105%);
 }
 
-html[data-dream-skin="active"][data-dream-shell="light"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) article {
+html[data-dream-skin="active"][data-dream-shell="light"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) article {
   background: rgb(var(--ds-panel-rgb) / .72);
 }
 
 html[data-dream-skin="active"][data-dream-shell="light"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):has([role="main"])::after,
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):has([role="main"])::after,
 html[data-dream-skin="active"][data-dream-shell="light"] [role="main"]:has([data-testid="home-icon"]) [data-feature="game-source"]::before {
   text-shadow: none;
 }
 
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"]) {
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) > :is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="_Header_"], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]) {
   /* Preserve Codex's native fixed header geometry and side-panel controls. */
   background: transparent !important;
   border-bottom: 0 !important;
@@ -719,7 +730,7 @@ html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surfa
 
 /* 26.1029 adds a separate top fade below the native header. Clear only its
    aria-hidden direct decoration; keep content, menus and header geometry. */
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
   [data-app-shell-main-content-top-fade] >
   [aria-hidden="true"][class*="MainContentTopFade-"]:not([role]) {
   background: transparent !important;
@@ -729,7 +740,7 @@ html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surfa
 
 /* Decorative chrome lives on the native shell; no injected positioning host is needed. */
 html[data-dream-skin="active"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"])::before {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) > :is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="_Header_"], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"])::before {
   content: none;
   position: absolute;
   left: 22px;
@@ -747,7 +758,7 @@ html[data-dream-skin="active"]
 }
 
 html[data-dream-skin="active"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"])::after {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) > :is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="_Header_"], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"])::after {
   content: none;
   position: absolute;
   right: 84px;
@@ -765,7 +776,7 @@ html[data-dream-skin="active"]
 }
 
 html[data-dream-skin="active"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):has([role="main"])::after {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):has([role="main"])::after {
   content: none;
   position: absolute;
   right: 28px;
@@ -780,9 +791,9 @@ html[data-dream-skin="active"]
 }
 
 html[data-dream-skin="active"][data-dream-shell="light"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"])::before,
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) > :is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="_Header_"], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"])::before,
 html[data-dream-skin="active"][data-dream-shell="light"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"])::after {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) > :is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="_Header_"], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"])::after {
   text-shadow: none;
 }
 
@@ -803,7 +814,7 @@ html[data-dream-skin="active"][data-dream-shell="dark"]
   text-shadow: 0 1px 2px rgb(var(--ds-bg-rgb) / .82) !important;
 }
 
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"] {
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"] {
   background: transparent !important;
   scrollbar-color: rgb(var(--ds-accent-rgb) / .38) transparent;
 }
@@ -1060,7 +1071,7 @@ html[data-dream-skin="active"][data-dream-art-framing="true"] {
 }
 
 html[data-dream-skin="active"][data-dream-art-framing="true"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))::before,
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))::before,
 html[data-dream-skin="active"][data-dream-art-framing="true"] [data-ds-part="main"]::before {
   background-position: center, center, var(--dream-art-framing-position) !important;
   background-size: 100% 100%, 100% 100%, cover !important;
@@ -1069,18 +1080,18 @@ html[data-dream-skin="active"][data-dream-art-framing="true"] [data-ds-part="mai
 }
 
 html[data-dream-skin="active"][data-dream-art-framing="true"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) {
   --ds-art-position: var(--dream-art-framing-position) !important;
 }
 
 html[data-dream-skin="active"][data-dream-art-framing="true"]
-  body:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]), [data-ds-part="main"], [data-ds-part="home"]) {
+  body:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"], [data-ds-part="home"]) {
   background-position: var(--dream-art-framing-position) !important;
   background-size: var(--dream-art-background-size, cover) !important;
 }
 
 html[data-dream-skin="active"][data-dream-art-framing="true"]:has(
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"]
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"]
 ) body {
   background-position: var(--dream-art-framing-position) !important;
   background-size: var(--dream-art-background-size, cover) !important;
@@ -1139,7 +1150,7 @@ html[data-dream-skin="active"]
    renderer assigns these parts only from one coherent main/composer/sidebar
    structure; keep the minimum background and transparency contract functional
    before a new exact selector contract is available. */
-html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]))) [data-ds-part="sidebar"] {
+html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"])) [data-ds-part="sidebar"] {
   background:
     linear-gradient(180deg,
       rgb(var(--ds-panel-rgb) / .98),
@@ -1150,8 +1161,8 @@ html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-m
   backdrop-filter: none !important;
 }
 
-html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]))) [data-ds-part="main"],
-html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])))
+html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"])) [data-ds-part="main"],
+html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"]))
   :not(:has([data-ds-part="main"])) > [data-ds-part="home"] {
   position: relative !important;
   isolation: isolate;
@@ -1162,8 +1173,8 @@ html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-m
   box-shadow: -8px 0 28px rgb(var(--ds-bg-rgb) / .18) !important;
 }
 
-html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]))) [data-ds-part="main"]::before,
-html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])))
+html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"])) [data-ds-part="main"]::before,
+html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"]))
   :not(:has([data-ds-part="main"])) > [data-ds-part="home"]::before {
   content: "";
   position: absolute;
@@ -1177,14 +1188,14 @@ html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-m
   opacity: .78;
 }
 
-html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]))) [data-ds-part="main"] > *,
-html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])))
+html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"])) [data-ds-part="main"] > *,
+html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"]))
   :not(:has([data-ds-part="main"])) > [data-ds-part="home"] > * {
   position: relative;
   z-index: 1;
 }
 
-html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]))) [data-ds-part="composer"] {
+html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"])) [data-ds-part="composer"] {
   position: relative;
   z-index: 2;
   overflow: visible !important;
@@ -1195,11 +1206,11 @@ html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-m
   backdrop-filter: var(--ds-surface-filter) !important;
 }
 
-html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]))) [data-ds-part="composer"]::before {
+html[data-dream-skin="active"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"])) [data-ds-part="composer"]::before {
   content: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"]))
   body:has([data-ds-part="main"], [data-ds-part="home"]) {
   background-image: var(--dream-skin-art) !important;
   background-position: var(--ds-art-position) !important;
@@ -1208,7 +1219,7 @@ html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.mai
   background-attachment: fixed !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"]))
   [data-ds-part="sidebar"] {
   background: linear-gradient(90deg,
     var(--ds-immersive-sidebar),
@@ -1217,9 +1228,9 @@ html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.mai
   box-shadow: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"]))
   [data-ds-part="main"],
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"]))
   :not(:has([data-ds-part="main"])) > [data-ds-part="home"] {
   background: linear-gradient(90deg,
     var(--ds-immersive-edge),
@@ -1229,16 +1240,16 @@ html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.mai
   box-shadow: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"]))
   [data-ds-part="main"]::before,
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]), [data-ds-part="main"]))
   :not(:has([data-ds-part="main"])) > [data-ds-part="home"]::before {
   content: none;
 }
 
 /* A wide image can carry the home screen too. The native hero remains live,
    but the artwork is painted once on the window instead of repeated in a card. */
-html[data-dream-skin="active"][data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"]) body {
+html[data-dream-skin="active"][data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"]) body {
   background-image: var(--dream-skin-art) !important;
   background-position: var(--ds-art-position) !important;
   background-size: cover !important;
@@ -1246,7 +1257,7 @@ html[data-dream-skin="active"][data-dream-art-wide="true"]:has(main:is(.main-sur
   background-attachment: fixed !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"])
+html[data-dream-skin="active"][data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"])
   aside.app-shell-left-panel {
   background: linear-gradient(90deg,
     var(--ds-immersive-sidebar),
@@ -1257,12 +1268,12 @@ html[data-dream-skin="active"][data-dream-art-wide="true"]:has(main:is(.main-sur
   backdrop-filter: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]) [role="main"])
+html[data-dream-skin="active"][data-dream-art-wide="true"]:has(main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]) [role="main"])
   aside.app-shell-left-panel::after {
   background: transparent !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):has([role="main"]) {
+html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):has([role="main"]) {
   background: linear-gradient(90deg,
     var(--ds-immersive-edge),
     var(--ds-immersive-mid) 64%,
@@ -1272,36 +1283,36 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface
   box-shadow: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):has([role="main"])
-  > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"]) {
+html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):has([role="main"])
+  > :is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="_Header_"], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]) {
   background: transparent !important;
   border-bottom: 0 !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
-  > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"]) {
+html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
+  > :is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="_Header_"], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]) {
   color: var(--ds-text) !important;
   text-shadow:
     0 1px 2px rgb(var(--ds-bg-rgb) / .86),
     0 0 8px rgb(var(--ds-bg-rgb) / .52) !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
-  > header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"]) svg {
+html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
+  > :is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="_Header_"], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*="ApplicationMenuPageHeader-"], [class*="PageHeader-"]) svg {
   color: rgb(var(--ds-muted-rgb) / .96) !important;
   filter: drop-shadow(0 1px 2px rgb(var(--ds-bg-rgb) / .72));
 }
 
 /* Codex moves focus to this non-interactive route wrapper after Shift. Its
    native outline can span the full content pane and an embedded webview. */
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
   [data-vscode-context][tabindex="0"]:focus-visible {
   outline: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):has([role="main"])
+html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):has([role="main"])
   [role="main"]:has([data-testid="home-icon"]) > div:only-child:has(> div:first-child > div:first-child [data-testid="home-icon"]) > div:first-child > div:first-child {
   border: 0 !important;
   border-radius: 0 !important;
@@ -1309,12 +1320,12 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface
   box-shadow: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):has([role="main"])
+html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):has([role="main"])
   [role="main"]:has([data-testid="home-icon"]) > div:only-child:has(> div:first-child > div:first-child [data-testid="home-icon"]) > div:first-child > div:first-child::before {
   content: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):has([role="main"])
+html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):has([role="main"])
   [role="main"]:has([data-testid="home-icon"]) .group\/home-suggestions button {
   background: rgb(var(--ds-panel-rgb) / .56) !important;
   box-shadow:
@@ -1425,9 +1436,9 @@ html[data-dream-skin="active"] :is(.composer-surface-chrome, [class*="_ComposerL
 /* Codex 26.818 places two opaque fades around the sticky thread composer.
    Match their complete utility signatures inside non-Home main surfaces so
    unrelated application gradients keep their native paint. */
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))
   [class~="pointer-events-none"][class~="bottom-0"][class~="h-full"][class~="bg-gradient-to-t"][class~="from-surface"][class~="via-surface"],
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))
   [class~="pointer-events-none"][class~="-bottom-1"][class~="h-7"][class~="bg-gradient-to-t"][class~="from-surface"][class~="to-transparent"] {
   background: transparent !important;
   background-image: none !important;
@@ -1436,7 +1447,7 @@ html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surfa
 /* 26.924 places its fade in a sticky spacer inside the thread scroll area,
    separate from the composer footer. Scope to that area and decorative node;
    clear paint only, preserving the editor, controls and native positioning. */
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
   .thread-scroll-container
   [aria-hidden="true"][class~="pointer-events-none"][class~="absolute"][class~="bottom-0"][class~="bg-gradient-to-t"][class~="from-surface"][class~="via-surface"] {
   background: transparent !important;
@@ -1447,10 +1458,10 @@ html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surfa
    horizontal cap while the input itself is still translucent. 26.1013 moves
    its offset, height and gradient into CSS Modules; match the decorative
    child of the native sticky spacer without relying on those utility classes. */
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
   .thread-scroll-container
   [aria-hidden="true"][class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"][class~="-top-8"][class~="h-8"][class~="bg-gradient-to-t"][class~="from-surface"],
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
   .thread-scroll-container
   [class~="pointer-events-none"][class~="sticky"][class~="bottom-0"] >
   [aria-hidden="true"][class~="pointer-events-none"][class~="absolute"][class~="inset-x-0"][class~="z-0"][class~="from-surface"]:not(
@@ -1462,7 +1473,7 @@ html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surfa
   backdrop-filter: none !important;
 }
 
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
   .thread-scroll-container
   [aria-hidden="true"][class~="absolute"][class~="inset-x-0"][class~="-top-8"]:is(
     [class~="bg-surface"], [class~="backdrop-blur-lg"]
@@ -1473,7 +1484,7 @@ html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surfa
   backdrop-filter: none !important;
 }
 
-html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+html[data-dream-skin="active"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
   .thread-scroll-container [data-thread-scroll-footer] {
   background: transparent !important;
   background-image: none !important;
@@ -1584,17 +1595,17 @@ html[data-dream-skin="active"] .thread-scroll-container
 /* Search routes ship an opaque sticky band and input surface. Keep the
    control legible while allowing the selected image to remain continuous. */
 html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) div.sticky:has(input[type="text"]) {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) div.sticky:has(input[type="text"]) {
   background: transparent !important;
 }
 
 html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) div.sticky:has(input[type="text"])::after {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) div.sticky:has(input[type="text"])::after {
   background: transparent !important;
 }
 
 html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"])) div.no-drag:has(> input[type="text"]) {
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"])) div.no-drag:has(> input[type="text"]) {
   background: var(--ds-immersive-composer) !important;
   border: 0 !important;
   box-shadow:
@@ -1606,12 +1617,12 @@ html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-
 /* Pull Requests and similar utility routes wrap their content in a native
    full-size opaque surface. Only clear full-window wrappers, not cards. */
 html[data-dream-skin="active"]:is([data-dream-task-mode="ambient"], [data-dream-art-task-mode="ambient"])[data-dream-art-wide="true"]
-  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):not(:has([role="main"]))
+  main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):not(:has([role="main"]))
   [class~="bg-token-main-surface-primary"][class~="h-full"][class~="w-full"] {
   background: transparent !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
   .app-shell-main-content-frame {
   border-top: 0 !important;
 }
@@ -1619,7 +1630,7 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface
 /* Codex 26.924 puts the fade state attribute on the content container, not
    just the decorative fade. Clear paint only: even a future selector drift
    must never hide the chat/composer subtree or alter its native layout. */
-html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
   :is(.app-shell-main-content-top-fade, [class*="_MainContentTopFade_"], [data-app-shell-main-content-top-fade]:empty) {
   background: transparent !important;
 }
@@ -1627,7 +1638,7 @@ html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface
 /* Codex paints a second opaque fade behind the sticky composer. The composer
    already owns its readable surface, so retaining this layer creates a false
    bottom panel and makes the control look duplicated. */
-html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])
+html[data-dream-skin="active"][data-dream-art-wide="true"] main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])
   .thread-scroll-container .bg-gradient-to-t.from-token-main-surface-primary {
   background: transparent !important;
 }
@@ -1695,7 +1706,7 @@ html[data-dream-skin="active"] [data-ds-part="message"] { border-radius: 16px; }
 
 @media (max-width: 1120px) {
   html[data-dream-skin="active"]
-    main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"]):has([role="main"])::after { content: none; }
+    main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"]):has([role="main"])::after { content: none; }
   html[data-dream-skin="active"] [role="main"]:has([data-testid="home-icon"]) { --thread-content-max-width: min(940px, calc(100cqw - 30px)) !important; }
   html[data-dream-skin="active"] [role="main"]:has([data-testid="home-icon"]) > div:only-child:has(> div:first-child > div:first-child [data-testid="home-icon"]) > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
 }

@@ -14,7 +14,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const startPath = path.resolve(here, "../scripts/start-dream-skin.ps1");
 
 const selectors = {
-  shell: 'main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])',
+  shell: 'main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"], [class*="MainContentSurface-"])',
   sidebar: "aside.app-shell-left-panel",
   composer: ".composer-surface-chrome",
   homeIcon: '[data-testid="home-icon"]',

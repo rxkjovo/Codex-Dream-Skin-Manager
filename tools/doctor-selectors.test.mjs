@@ -6,16 +6,18 @@ const contract = JSON.parse(await fs.readFile(new URL("./selectors.json", import
 const selectorFor = (key) => contract.selectors.find((entry) => entry.key === key)?.selector;
 assert.equal(
   selectorFor("shell-main"),
-  "main:is(.main-surface, [data-app-shell-main-surface], [class*=\"_MainContentSurface_\"])",
-  "The shell contract must support both legacy and Codex 26.727 main surfaces.",
+  "main:is(.main-surface, [data-app-shell-main-surface], [class*=\"_MainContentSurface_\"], [class*=\"MainContentSurface-\"])",
+  "The shell contract must support legacy, CSS-module, and MainContentSurface-prefixed main surfaces.",
 );
 assert.equal(
   selectorFor("header-tint"),
-  "header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*=\"_Header_\"])",
-  "The header contract must support both legacy and Codex 26.727 headers.",
+  ":is(header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*=\"_Header_\"], [class*=\"ApplicationMenuPageHeader-\"], [class*=\"PageHeader-\"]), [data-app-shell-header-edge-scroll], [data-app-shell-titlebar], [data-app-shell-application-menu-bar], [class*=\"ApplicationMenuPageHeader-\"], [class*=\"PageHeader-\"])",
+  "The header contract must support semantic app-shell attributes and stable prefix families.",
 );
 assert.match(selectorFor("shell-main"), /\[class\*=\"_MainContentSurface_\"\]/);
 assert.match(selectorFor("header-tint"), /\[class\*=\"_Header_\"\]/);
+assert.match(selectorFor("shell-main"), /\[class\*=\"MainContentSurface-\"\]/);
+assert.match(selectorFor("header-tint"), /data-app-shell-titlebar/);
 assert.doesNotMatch(selectorFor("shell-main"), /_[A-Za-z]+_[a-z0-9]{4,}/);
 assert.doesNotMatch(selectorFor("header-tint"), /_[A-Za-z]+_[a-z0-9]{4,}/);
 assert.equal(

@@ -158,6 +158,17 @@ html[data-dream-skin="active"] {
     background: transparent !important;
   }
 
+  /* Codex 26.1117 can render the titlebar wrapper as a non-header element.
+     The renderer marks the semantic app-shell header after its fallback
+     probe; keep that chrome transparent without touching its geometry. */
+  html[data-dream-skin="active"] [data-ds-part="header"] {
+    background: transparent !important;
+    background-image: none !important;
+    border-bottom: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
   /* 26.924 summary section titles are sticky headers with an opaque ::before
      strip. The enclosing summary panel already paints the configured glass;
      do not stack another surface/blur on its titles or their top padding. */
@@ -1139,7 +1150,7 @@ html[data-dream-skin="active"]
    renderer assigns these parts only from one coherent main/composer/sidebar
    structure; keep the minimum background and transparency contract functional
    before a new exact selector contract is available. */
-html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds-part="sidebar"] {
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"])) [data-ds-part="sidebar"] {
   background:
     linear-gradient(180deg,
       rgb(var(--ds-panel-rgb) / .98),
@@ -1150,8 +1161,8 @@ html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds
   backdrop-filter: none !important;
 }
 
-html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds-part="main"],
-html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"])) [data-ds-part="main"],
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"]))
   :not(:has([data-ds-part="main"])) > [data-ds-part="home"] {
   position: relative !important;
   isolation: isolate;
@@ -1162,8 +1173,8 @@ html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
   box-shadow: -8px 0 28px rgb(var(--ds-bg-rgb) / .18) !important;
 }
 
-html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds-part="main"]::before,
-html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"])) [data-ds-part="main"]::before,
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"]))
   :not(:has([data-ds-part="main"])) > [data-ds-part="home"]::before {
   content: "";
   position: absolute;
@@ -1177,14 +1188,14 @@ html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
   opacity: .78;
 }
 
-html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds-part="main"] > *,
-html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"])) [data-ds-part="main"] > *,
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"]))
   :not(:has([data-ds-part="main"])) > [data-ds-part="home"] > * {
   position: relative;
   z-index: 1;
 }
 
-html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds-part="composer"] {
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"])) [data-ds-part="composer"] {
   position: relative;
   z-index: 2;
   overflow: visible !important;
@@ -1195,11 +1206,11 @@ html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds
   backdrop-filter: var(--ds-surface-filter) !important;
 }
 
-html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__)) [data-ds-part="composer"]::before {
+html[data-dream-skin="active"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"])) [data-ds-part="composer"]::before {
   content: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"]))
   body:has([data-ds-part="main"], [data-ds-part="home"]) {
   background-image: var(--dream-skin-art) !important;
   background-position: var(--ds-art-position) !important;
@@ -1208,7 +1219,7 @@ html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELE
   background-attachment: fixed !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"]))
   [data-ds-part="sidebar"] {
   background: linear-gradient(90deg,
     var(--ds-immersive-sidebar),
@@ -1217,9 +1228,9 @@ html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELE
   box-shadow: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"]))
   [data-ds-part="main"],
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"]))
   :not(:has([data-ds-part="main"])) > [data-ds-part="home"] {
   background: linear-gradient(90deg,
     var(--ds-immersive-edge),
@@ -1229,9 +1240,9 @@ html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELE
   box-shadow: none !important;
 }
 
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"]))
   [data-ds-part="main"]::before,
-html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__))
+html[data-dream-skin="active"][data-dream-art-wide="true"]:not(:has(__DREAM_SELECTOR_SHELL_MAIN__, [data-ds-part="main"]))
   :not(:has([data-ds-part="main"])) > [data-ds-part="home"]::before {
   content: none;
 }
